@@ -1,0 +1,36 @@
+@import "tailwindcss";
+
+@theme {
+  --color-primary: #D96F32 ;
+  --color-secondary: #353535 ;
+}
+
+
+::-webkit-scrollbar{width: 8px !important; height: 8px !important;}
+::-webkit-scrollbar-thumb{background: #D96F32;}
+::-webkit-scrollbar-track{background: #fff;}
+
+body{background: #f1f1f1;}
+
+.container{width: 96%; margin: auto;}
+
+.ReactCollapse--collapse{
+  transition: height 300ms;
+}
+
+.btn-border-g{border: 1px solid #D96F32 !important; font-weight: 600 !important; color: #D96F32 !important;}
+.btn-border-g:hover{background: #D96F32 !important; color: #fff !important;}
+
+.btn-g{border: 1px solid #D96F32 !important; font-weight: 600 !important; color: #fff !important; background: #D96F32 !important; padding: 8px 15px !important;}
+.btn-g:hover{color: #fff !important; background: #353535 !important;}
+
+.MuiTableHead-root th{background: #f1f1f1 !important; font-weight: 600 !important; padding: 10px 16px !important;}
+.MuiTableHead-root th{@apply text-gray-700!}
+
+.MuiTableCell{padding: 10px 16px !important ;}
+
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
