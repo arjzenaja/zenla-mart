@@ -4,10 +4,14 @@ import Header from "@/component/Header.jsx";
 
 import { Inter } from "next/font/google";
 import ThemeProvider from "@/context/ThemeContext";
+import { NotificationProvider } from "@/context/NotificationProvider";
+import ErrorHandler from "@/component/ErrorHandler.jsx";
+import ScrollObserver from "@/component/ScrollObserver.jsx";
 
 const inter = Inter({
   subsets: ["latin"],
-  weight: ["400", "500", "700"],
+  weight: ["300", "400", "500", "600", "700", "800", "900"],
+  display: "swap",
 });
 
 export const metadata = {
@@ -19,11 +23,15 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className={`${inter.className}`}>
-        <ThemeProvider>
-          <Header />
-          {children}
-          <Footer />
-        </ThemeProvider>
+        <ErrorHandler />
+        <NotificationProvider>
+          <ThemeProvider>
+            <Header />
+            <ScrollObserver />
+            {children}
+            <Footer />
+          </ThemeProvider>
+        </NotificationProvider>
       </body>
     </html>
   );

@@ -18,7 +18,17 @@ import Drawer from "@mui/material/Drawer";
 import { MyContext } from "@/context/ThemeProvider";
 import TextField from "@mui/material/TextField";
 
+import { PhoneInput } from "react-international-phone";
+import "react-international-phone/style.css";
+
+import Radio from "@mui/material/Radio";
+import RadioGroup from "@mui/material/RadioGroup";
+import FormControlLabel from "@mui/material/FormControlLabel";
+import FormControl from "@mui/material/FormControl";
+import FormLabel from "@mui/material/FormLabel";
+
 const Footer = () => {
+  const [phone, setPhone] = useState("");
   const context = useContext(MyContext);
 
   const [open, setOpen] = React.useState(false);
@@ -29,292 +39,68 @@ const Footer = () => {
 
   return (
     <>
-      <footer className="bg-[#fafafa] py-8 pb-0 mt-5">
+      <footer className="site-footer mt-6">
         <div className="container">
-          <div className="flex items-center justify-center gap-2 py-3 lg:py-8 pb-0 lg:pb-8 px-0 lg:px-5">
-            <div className="col flex items-center justify-center flex-col group w-[15%]">
-              <LiaShoppingBagSolid className="text-[40px] transition-all duration-300 group-hover:text-primary group-hover:translate-y-1" />
-              <h3 className="text-[16px] font-[500] mt-3">Free Shopping</h3>
-              <p className="text-[13px] font-[500] text-gray-500">
-                For all Orders Over $100
-              </p>
-            </div>
-
-            <div className="col flex items-center justify-center flex-col group w-[15%]">
-              <PiKeyReturnLight className="text-[40px] transition-all duration-300 group-hover:text-primary group-hover:translate-y-1" />
-              <h3 className="text-[16px] font-[500] mt-3">30 Days Rerturns</h3>
-              <p className="text-[13px] font-[500] text-gray-500">
-                For an Exchange Product
-              </p>
-            </div>
-
-            <div className="col flex items-center justify-center flex-col group w-[15%]">
-              <BsWallet2 className="text-[40px] transition-all duration-300 group-hover:text-primary group-hover:translate-y-1" />
-              <h3 className="text-[16px] font-[500] mt-3">Secured Payment</h3>
-              <p className="text-[13px] font-[500] text-gray-500">
-                Payment Cards Accepted
-              </p>
-            </div>
-
-            <div className="col flex items-center justify-center flex-col group w-[15%]">
-              <LiaGiftSolid className="text-[40px] transition-all duration-300 group-hover:text-primary group-hover:translate-y-1" />
-              <h3 className="text-[16px] font-[500] mt-3">Special Gift</h3>
-              <p className="text-[13px] font-[500] text-gray-500">
-                Out First Products Order
-              </p>
-            </div>
-
-            <div className="col flex items-center justify-center flex-col group w-[15%]">
-              <BiSupport className="text-[40px] transition-all duration-300 group-hover:text-primary group-hover:translate-y-1" />
-              <h3 className="text-[16px] font-[500] mt-3">Support 24/7</h3>
-              <p className="text-[13px] font-[500] text-gray-700">
-                Contact us Anytime
-              </p>
-            </div>
-          </div>
-
-          <hr />
-
-          <div className="flex justify-between py-8">
-            <div className="col1 w-[20%] flex flex-col gap-4 border-r-[1px] border-[rgba(0,0,0,0.1)]">
-              <h3 className="text-[20px] font-[500] text-gray-700">
-                Contact Us
-              </h3>
-              <p className="text-[16px] font-normal">
-                Zenla - Mega Super Store
-                <br />
-                1234 Street Name, City, England
-              </p>
-
-              <Link
-                href={"mailto:someone@example.com"}
-                className="text-gray-700 font-[500] text-[15px] hover:text-primary"
-              >
-                someone@example.com
+          <div className="footer-grid">
+            <div className="footer-brand">
+              <Link href="/" className="flex items-center gap-3 mb-3">
+                <LiaShoppingBagSolid size={28} className="text-primary" />
+                <span className="text-xl font-semibold">Zenla Mart</span>
               </Link>
 
-              <span className="text-[20px] font-bold text-primary">
-                {" "}
-                (+62) 123456789
-              </span>
-
-              <div className="flex items-center gap-3">
-                <IoChatboxOutline className="text-[40px] text-primary" />
-                <span className="text-[16px] font-[500] text-gray-700">
-                  Online Chat
-                  <br />
-                  Get Expert Help
-                </span>
-              </div>
+              <p className="text-sm">Perum Permata Hamoni Reciden Blok E1 No. 2</p>
+              <p className="text-sm">Ledug, Kembaran, Banyumas, Jawa Tengah</p>
+              <p className="mt-3 text-sm">zenlamart@gmail.com</p>
+              <p className="mt-1 text-sm font-semibold text-primary">(+62) 857-7111-3678</p>
             </div>
 
-            <div className="col2 w-[35%] flex justify-between gap-5 pl-10">
-              <div className="box">
-                <h3 className="text-[20px] font-[500] text-gray-500">
-                  Products
-                </h3>
-                <ul className="list mt-5">
-                  <li className="list-none text-[14px] w-full mb-2">
-                    <Link
-                      href={"/"}
-                      className="link text-[15px] font-[500] text-gray-500 hover:text-primary"
-                    >
-                      Prices drop
-                    </Link>
-                  </li>
-
-                  <li className="list-none text-[14px] w-full mb-2">
-                    <Link
-                      href={"/"}
-                      className="link text-[15px] font-[500] text-gray-500 hover:text-primary"
-                    >
-                      New products
-                    </Link>
-                  </li>
-
-                  <li className="list-none text-[14px] w-full mb-2">
-                    <Link
-                      href={"/"}
-                      className="link text-[15px] font-[500] text-gray-500 hover:text-primary"
-                    >
-                      Best sales
-                    </Link>
-                  </li>
-
-                  <li className="list-none text-[14px] w-full mb-2">
-                    <Link
-                      href={"/"}
-                      className="link text-[15px] font-[500] text-gray-500 hover:text-primary"
-                    >
-                      Contact us
-                    </Link>
-                  </li>
-
-                  <li className="list-none text-[14px] w-full mb-2">
-                    <Link
-                      href={"/"}
-                      className="link text-[15px] font-[500] text-gray-500 hover:text-primary"
-                    >
-                      Sitemap
-                    </Link>
-                  </li>
-
-                  <li className="list-none text-[14px] w-full mb-2">
-                    <Link
-                      href={"/"}
-                      className="link text-[15px] font-[500] text-gray-500 hover:text-primary"
-                    >
-                      Stores
-                    </Link>
-                  </li>
-                </ul>
-              </div>
-
-              <div className="box">
-                <h3 className="text-[20px] font-[500] text-gray-500">
-                  Our company
-                </h3>
-                <ul className="list mt-5">
-                  <li className="list-none text-[14px] w-full mb-2">
-                    <Link
-                      href={"/"}
-                      className="link text-[15px] font-[500] text-gray-500 hover:text-primary"
-                    >
-                      Delivery
-                    </Link>
-                  </li>
-
-                  <li className="list-none text-[14px] w-full mb-2">
-                    <Link
-                      href={"/"}
-                      className="link text-[15px] font-[500] text-gray-500 hover:text-primary"
-                    >
-                      Legal Notice
-                    </Link>
-                  </li>
-
-                  <li className="list-none text-[14px] w-full mb-2">
-                    <Link
-                      href={"/"}
-                      className="link text-[15px] font-[500] text-gray-500 hover:text-primary"
-                    >
-                      Terms and conditions of use
-                    </Link>
-                  </li>
-
-                  <li className="list-none text-[14px] w-full mb-2">
-                    <Link
-                      href={"/"}
-                      className="link text-[15px] font-[500] text-gray-500 hover:text-primary"
-                    >
-                      About us
-                    </Link>
-                  </li>
-
-                  <li className="list-none text-[14px] w-full mb-2">
-                    <Link
-                      href={"/"}
-                      className="link text-[15px] font-[500] text-gray-500 hover:text-primary"
-                    >
-                      Secure payment
-                    </Link>
-                  </li>
-
-                  <li className="list-none text-[14px] w-full mb-2">
-                    <Link
-                      href={"/"}
-                      className="link text-[15px] font-[500] text-gray-500 hover:text-primary"
-                    >
-                      Login
-                    </Link>
-                  </li>
-                </ul>
-              </div>
-            </div>
-
-            <div className="col3 w-[45%] pl-20">
-              <h3 className="text-[20px] font-[500] text-gray-500">
-                Subscribe to newsletter
-              </h3>
-              <p className="text-[14px] mt-3">
-                Subscribe to our latest newsletter to get news about special
-                discounts.
-              </p>
-
-              <form className="flex flex-col gap-5 w-[500px] mt-5">
-                <input
-                  type="text"
-                  className="w-full h-[40px] bg-white border border-[rgba(0,0,0,0.1)] outline-none rounded-lg px-4"
-                  placeholder="Your email address"
-                />
-
-                <div className="btn">
-                  <Button className="btn-g">Subscribe</Button>
+            <div className="footer-links">
+              <div className="grid grid-cols-2 gap-6">
+                <div>
+                  <h4>Products</h4>
+                  <ul>
+                    <li><Link href="/">Prices drop</Link></li>
+                    <li><Link href="/">New products</Link></li>
+                    <li><Link href="/">Best sales</Link></li>
+                  </ul>
                 </div>
+
+                <div>
+                  <h4>Company</h4>
+                  <ul>
+                    <li><Link href="/">Delivery</Link></li>
+                    <li><Link href="/">Terms &amp; Conditions</Link></li>
+                    <li><Link href="/">About us</Link></li>
+                    <li><Link href="/">Secure payment</Link></li>
+                  </ul>
+                </div>
+              </div>
+            </div>
+
+            <div className="newsletter">
+              <h4>Subscribe to our newsletter</h4>
+              <p className="text-sm mt-2">Get the latest offers and product updates.</p>
+
+              <form className="flex gap-0 mt-4 max-w-md">
+                <input aria-label="email" placeholder="Your email address" className="" />
+                <Button className="btn-g subscribe-btn">Subscribe</Button>
               </form>
+
+              <div className="mt-5 socials">
+                <Link href="/" aria-label="facebook"><FaFacebookF size={16} /></Link>
+                <Link href="/" aria-label="youtube"><AiOutlineYoutube size={16} /></Link>
+                <Link href="/" aria-label="pinterest"><FaPinterestP size={16} /></Link>
+                <Link href="/" aria-label="instagram"><FaInstagram size={16} /></Link>
+              </div>
             </div>
           </div>
-        </div>
 
-        <hr />
-
-        <div className="bottomStrip py-3">
-          <div className="container flex items-center justify-between">
-            <div className="socials flex items-center gap-2">
-              <Link
-                href={"/"}
-                className="flex items-center justify-center bg-white rounded-full border border-[rgba(0,0,0,0.1)] w-[30] h-[30] hover:bg-primary hover:text-white group transition"
-              >
-                <FaFacebookF
-                  size={20}
-                  className="text-gray-500 group-hover:text-white"
-                />
-              </Link>
-
-              <Link
-                href={"/"}
-                className="flex items-center justify-center bg-white rounded-full border border-[rgba(0,0,0,0.1)] w-[30] h-[30] hover:bg-primary hover:text-white group transition"
-              >
-                <AiOutlineYoutube
-                  size={20}
-                  className="text-gray-500 group-hover:text-white"
-                />
-              </Link>
-
-              <Link
-                href={"/"}
-                className="flex items-center justify-center bg-white rounded-full border border-[rgba(0,0,0,0.1)] w-[30] h-[30] hover:bg-primary hover:text-white group transition"
-              >
-                <FaPinterestP
-                  size={20}
-                  className="text-gray-500 group-hover:text-white"
-                />
-              </Link>
-
-              <Link
-                href={"/"}
-                className="flex items-center justify-center bg-white rounded-full border border-[rgba(0,0,0,0.1)] w-[30] h-[30] hover:bg-primary hover:text-white group transition"
-              >
-                <FaInstagram
-                  size={20}
-                  className="text-gray-500 group-hover:text-white"
-                />
-              </Link>
-            </div>
-
-            <p className="text-center">&copy; Zenla Mart</p>
-
-            <div className="flex item-center gap-1">
-              {/* <img src="./qris.jpg" alt="cart" /> */}
-              {/* <img src="" alt="cart" />
-            <img src="" alt="cart" />
-            <img src="" alt="cart" />
-            <img src="" alt="cart" /> */}
-            </div>
+          <div className="footer-bottom">
+            <p className="text-sm">&copy; {new Date().getFullYear()} Zenla Mart. All rights reserved.</p>
+            <div className="text-sm text-gray-500">Designed with care • Built for conversions</div>
           </div>
         </div>
       </footer>
-
       <Drawer
         open={context?.isOpenAddressBox}
         onClose={() => context?.isOpenAddressPanel(false)}
@@ -326,13 +112,93 @@ const Footer = () => {
             Add New Address
           </h3>
 
-          <div className="flex flex-col gap-2 mt-3">
+          <div className="flex flex-col gap-4 mt-3">
             <div className="form-group w-full">
               <TextField
                 label="Address Line 1"
                 variant="outlined"
-                className=""
+                className="w-full"
+                size="small"
               />
+            </div>
+
+            <div className="form-group w-full">
+              <TextField
+                label="City"
+                variant="outlined"
+                className="w-full"
+                size="small"
+              />
+            </div>
+
+            <div className="form-group w-full">
+              <TextField
+                label="State"
+                variant="outlined"
+                className="w-full"
+                size="small"
+              />
+            </div>
+            <div className="form-group w-full">
+              <TextField
+                label="Pincode"
+                type="number"
+                variant="outlined"
+                className="w-full"
+                size="small"
+              />
+            </div>
+
+            <div className="form-group w-full">
+              <TextField
+                label="Country"
+                type="text"
+                variant="outlined"
+                className="w-full"
+                size="small"
+              />
+            </div>
+
+            <div className="form-group w-full">
+              <PhoneInput value={phone} onChange={(phone) => setPhone(phone)} />
+            </div>
+
+            <div className="form-group w-full">
+              <TextField
+                label="Landmark"
+                type="text"
+                variant="outlined"
+                className="w-full"
+                size="small"
+              />
+            </div>
+
+            <div className="form-group w-full">
+              <FormControl>
+                <FormLabel id="demo-row-radio-buttons-group-label">
+                  Address Type
+                </FormLabel>
+                <RadioGroup
+                  row
+                  aria-labelledby="demo-row-radio-buttons-group-label"
+                  name="row-radio-buttons-group"
+                >
+                  <FormControlLabel
+                    value="Home"
+                    control={<Radio />}
+                    label="Home"
+                  />
+                  <FormControlLabel
+                    value="Office"
+                    control={<Radio />}
+                    label="Office"
+                  />
+                </RadioGroup>
+              </FormControl>
+            </div>
+
+            <div className="form-group w-full">
+              <Button className="btn-g w-full">Save</Button>
             </div>
           </div>
         </form>

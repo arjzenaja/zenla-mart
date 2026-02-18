@@ -1,16 +1,23 @@
 'use client'
 import React from 'react'
+import { useParams } from 'next/navigation'
 import ProductDetailsComponent from '@/component/ProductDetails';
 import ProductRow from '@/component/ProductRow';
+import Container from '@/component/ui/Container'
 
 const ProductDetails = () => {
-  return (
-    <section className='py-10 bg-white'>
-      <div className='container mb-5'>
-        <ProductDetailsComponent />
-      </div>
+  const params = useParams();
+  const productId = params?.productId;
 
-      <ProductRow title='Related Products'/>
+  return (
+    <section className='product-detail-page py-8 md:py-12'>
+      <Container>
+        <div className='mb-10'>
+          <ProductDetailsComponent productId={productId} />
+        </div>
+
+        <ProductRow title='Related Products'/>
+      </Container>
     </section>
   )
 }
