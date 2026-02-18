@@ -1,10 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Button, TextField, Alert, CircularProgress } from '@mui/material';
 import { useAuth } from '../components/AuthProvider';
-import { adminAuthAPI } from '@/lib/api';
 import { usersAPI } from '@/lib/api';
+import { validateIndonesianPhone, formatPhoneForDisplay } from '@/utils/phoneValidation';
+import Toast from '@/component/Toast';
 
 export default function ProfilePage() {
   const { user: authUser, setUser } = useAuth();
@@ -12,36 +13,68 @@ export default function ProfilePage() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [phoneError, setPhoneError] = useState('');
+  const [nameError, setNameError] = useState('');
+  const [toast, setToast] = useState({ open: false, message: '', severity: 'info' });
+
+  // Original data from server
+  const [originalData, setOriginalData] = useState({
+    name: '',
+    email: '',
+    phone: '',
+    updatedAt: null,
+  });
+
+  // Current form data
   const [user, setUserData] = useState({
     name: '',
     email: '',
     phone: '',
   });
 
+  const isSubmittingRef = useRef(false);
+
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         setLoading(true);
-        const response = await adminAuthAPI.getMe();
+        setError('');
+        const response = await usersAPI.getMe();
         const userData = response.user || response;
-        setUserData({
+        
+        const phoneFormatted = formatPhoneForDisplay(userData.phone || '');
+        
+        const initialData = {
           name: userData.name || '',
           email: userData.email || '',
-          phone: userData.phone || '',
+          phone: phoneFormatted,
+        };
+
+        setUserData(initialData);
+        setOriginalData({
+          ...initialData,
+          updatedAt: userData.updatedAt || null,
         });
       } catch (error) {
         console.error('Error fetching profile:', error);
         setError('Failed to load profile');
+        showToast('Failed to load profile', 'error');
       } finally {
         setLoading(false);
       }
     };
 
     if (authUser) {
-      setUserData({
+      const phoneFormatted = formatPhoneForDisplay(authUser.phone || '');
+      const initialData = {
         name: authUser.name || '',
         email: authUser.email || '',
-        phone: authUser.phone || '',
+        phone: phoneFormatted,
+      };
+      setUserData(initialData);
+      setOriginalData({
+        ...initialData,
+        updatedAt: authUser.updatedAt || null,
       });
       setLoading(false);
     } else {
@@ -49,37 +82,125 @@ export default function ProfilePage() {
     }
   }, [authUser]);
 
+  const showToast = (message, severity = 'info') => {
+    setToast({ open: true, message, severity });
+  };
+
   const handleChange = (e) => {
     const { name, value } = e.target;
+    
+    // Clear errors when user starts typing
+    if (name === 'name') {
+      setNameError('');
+    }
+    if (name === 'phone') {
+      setPhoneError('');
+    }
+    setError('');
+    setSuccess('');
+
     setUserData((prev) => ({
       ...prev,
       [name]: value,
     }));
-    setError('');
-    setSuccess('');
+  };
+
+  // Check if form has changes
+  const hasChanges = () => {
+    return (
+      user.name.trim() !== originalData.name.trim() ||
+      (user.phone || '') !== (originalData.phone || '')
+    );
+  };
+
+  // Validate form
+  const validateForm = () => {
+    let isValid = true;
+
+    // Validate name
+    if (!user.name || user.name.trim() === '') {
+      setNameError('Full Name is required');
+      isValid = false;
+    } else {
+      setNameError('');
+    }
+
+    // Validate phone
+    if (user.phone) {
+      const validation = validateIndonesianPhone(user.phone);
+      if (!validation.isValid) {
+        setPhoneError(validation.error);
+        isValid = false;
+      } else {
+        setPhoneError('');
+      }
+    }
+
+    return isValid;
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+
+    // Prevent double submit
+    if (isSubmittingRef.current || saving) {
+      return;
+    }
+
+    // Clear previous errors
     setError('');
     setSuccess('');
+    setPhoneError('');
+    setNameError('');
+
+    // Validate form
+    if (!validateForm()) {
+      return;
+    }
+
+    // Check if there are changes
+    if (!hasChanges()) {
+      showToast('No changes to save', 'info');
+      return;
+    }
+
+    isSubmittingRef.current = true;
     setSaving(true);
 
     try {
-      // Update profile menggunakan usersAPI.updateMe
-      const response = await usersAPI.updateMe({
-        name: user.name,
-        phone: user.phone,
-        // Email biasanya tidak bisa diubah
-      });
+      const phoneToValidate = user.phone;
+      const validation = validateIndonesianPhone(phoneToValidate);
+      const normalizedPhone = validation.normalized || phoneToValidate;
+
+      const updateData = {
+        name: user.name.trim(),
+        phone: normalizedPhone,
+      };
+
+      const response = await usersAPI.updateMe(updateData);
 
       // Handle response format
       const updatedUser = response.data?.user || response.user || response;
 
-      // Update user di context
+      const phoneFormatted = formatPhoneForDisplay(updatedUser.phone || normalizedPhone);
+
+      const newData = {
+        name: updatedUser.name || user.name,
+        email: updatedUser.email || user.email,
+        phone: phoneFormatted,
+      };
+
+      setUserData(newData);
+      setOriginalData({
+        ...newData,
+        updatedAt: updatedUser.updatedAt || new Date().toISOString(),
+      });
+
+      // Update user in context
       const newUserData = {
         ...authUser,
         ...updatedUser,
+        phone: phoneFormatted,
       };
       setUser(newUserData);
 
@@ -89,11 +210,31 @@ export default function ProfilePage() {
       }
 
       setSuccess('Profile updated successfully!');
+      showToast('Profile updated successfully!', 'success');
     } catch (error) {
       console.error('Error updating profile:', error);
-      setError(error.message || 'Failed to update profile');
+      const errorMessage = error.message || 'Failed to update profile';
+      setError(errorMessage);
+      showToast(errorMessage, 'error');
     } finally {
       setSaving(false);
+      isSubmittingRef.current = false;
+    }
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return 'N/A';
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleDateString('id-ID', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+    } catch (error) {
+      return 'N/A';
     }
   };
 
@@ -106,238 +247,179 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="p-5 bg-[#f1f1f1] min-h-screen">
-      <div className="bg-white rounded-lg shadow-md p-8 max-w-3xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-[28px] font-bold text-gray-800 mb-2">My Profile</h1>
-          <p className="text-[14px] text-gray-600">Manage your account information and settings</p>
-        </div>
+    <main className="flex-1 min-h-screen" style={{
+      background: 'linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%)'
+    }}>
+      <Toast
+        open={toast.open}
+        message={toast.message}
+        severity={toast.severity}
+        onClose={() => setToast({ ...toast, open: false })}
+      />
+      
+      <div className="p-8 max-w-4xl mx-auto animate-fadeIn">
+        <div className="card-premium p-8">
+          {/* Header */}
+          <div className="mb-8 border-b border-gray-100 pb-6">
+            <h1 className="text-3xl font-extrabold gradient-text mb-2">My Profile</h1>
+            <p className="text-gray-500 font-medium">Manage your account information and settings</p>
+          </div>
 
-        {/* Alert Messages */}
-        {error && (
-          <Alert 
-            severity="error" 
-            className="mb-6 !rounded-md" 
-            onClose={() => setError('')}
-            sx={{ 
-              '& .MuiAlert-message': { fontSize: '14px' },
-              '& .MuiAlert-icon': { fontSize: '20px' }
-            }}
-          >
-            {error}
-          </Alert>
-        )}
+          {/* Alert Messages */}
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl flex items-center gap-3 animate-fadeIn">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+              {error}
+            </div>
+          )}
 
-        {success && (
-          <Alert 
-            severity="success" 
-            className="mb-6 !rounded-md" 
-            onClose={() => setSuccess('')}
-            sx={{ 
-              '& .MuiAlert-message': { fontSize: '14px' },
-              '& .MuiAlert-icon': { fontSize: '20px' }
-            }}
-          >
-            {success}
-          </Alert>
-        )}
+          {success && (
+            <div className="mb-6 p-4 bg-green-50 border border-green-200 text-green-700 rounded-xl flex items-center gap-3 animate-fadeIn">
+              <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
+              {success}
+            </div>
+          )}
 
-        <form onSubmit={handleSubmit}>
-          {/* Profile Picture Section */}
-          <div className="flex flex-col items-center mb-8 pb-8 border-b border-[rgba(0,0,0,0.1)]">
-            <div className="relative mb-4">
-              <div className="w-[140px] h-[140px] rounded-full overflow-hidden border-4 border-gray-200 shadow-md">
-                <img
-                  src="/profile.jpg"
-                  alt="Profile"
-                  className="w-full h-full object-cover"
+          <form onSubmit={handleSubmit} className="space-y-8">
+            {/* Form Fields - Grid Layout */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="form-group">
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  Full Name <span className="text-primary">*</span>
+                </label>
+                <input
+                  type="text"
+                  name="name"
+                  value={user.name}
+                  onChange={handleChange}
+                  required
+                  disabled={saving}
+                  className={`w-full h-[50px] px-4 rounded-xl border-2 bg-gray-50 focus:bg-white transition-smooth outline-none ${
+                    nameError 
+                      ? 'border-red-300 focus:border-red-500' 
+                      : 'border-transparent focus:border-primary'
+                  }`}
+                  placeholder="Enter your name"
                 />
+                {nameError && <p className="text-sm text-red-500 mt-1 ml-1">{nameError}</p>}
               </div>
-              <Button
-                variant="contained"
-                size="small"
-                className="!absolute bottom-0 right-0 !min-w-0 !p-2 !rounded-full !bg-primary !shadow-md hover:!bg-secondary"
-                disabled
-                sx={{ 
-                  minWidth: '40px',
-                  width: '40px',
-                  height: '40px',
-                  padding: 0
-                }}
-              >
-                <span className="text-[18px]">📷</span>
-              </Button>
-            </div>
-            <p className="text-[12px] text-gray-500">Click camera icon to change profile picture</p>
-          </div>
 
-          {/* Form Fields */}
-          <div className="space-y-5 mb-6">
-            <div>
-              <label className="block text-[15px] text-gray-800 font-medium mb-2">
-                Name <span className="text-red-500">*</span>
-              </label>
-              <TextField
-                fullWidth
-                name="name"
-                value={user.name}
-                onChange={handleChange}
-                required
-                variant="outlined"
-                placeholder="Enter your name"
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: '4px',
-                    '& fieldset': {
-                      borderColor: 'rgba(0, 0, 0, 0.2)',
-                    },
-                    '&:hover fieldset': {
-                      borderColor: 'rgba(0, 0, 0, 0.4)',
-                    },
-                    '&.Mui-focused fieldset': {
-                      borderColor: '#D96F32',
-                    },
-                  },
-                  '& .MuiInputBase-input': {
-                    padding: '12px 14px',
-                    fontSize: '14px',
-                  },
-                }}
-              />
-            </div>
-
-            <div>
-              <label className="block text-[15px] text-gray-800 font-medium mb-2">
-                Email <span className="text-red-500">*</span>
-              </label>
-              <TextField
-                fullWidth
-                name="email"
-                value={user.email}
-                onChange={handleChange}
-                required
-                disabled
-                variant="outlined"
-                placeholder="Enter your email"
-                helperText="Email cannot be changed"
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: '4px',
-                    backgroundColor: '#f5f5f5',
-                    '& fieldset': {
-                      borderColor: 'rgba(0, 0, 0, 0.1)',
-                    },
-                  },
-                  '& .MuiInputBase-input': {
-                    padding: '12px 14px',
-                    fontSize: '14px',
-                  },
-                  '& .MuiFormHelperText-root': {
-                    fontSize: '12px',
-                    marginTop: '4px',
-                    color: '#666',
-                  },
-                }}
-              />
-            </div>
-
-            <div>
-              <label className="block text-[15px] text-gray-800 font-medium mb-2">
-                Phone
-              </label>
-              <TextField
-                fullWidth
-                name="phone"
-                value={user.phone}
-                onChange={handleChange}
-                variant="outlined"
-                placeholder="Enter your phone number"
-                sx={{
-                  '& .MuiOutlinedInput-root': {
-                    borderRadius: '4px',
-                    '& fieldset': {
-                      borderColor: 'rgba(0, 0, 0, 0.2)',
-                    },
-                    '&:hover fieldset': {
-                      borderColor: 'rgba(0, 0, 0, 0.4)',
-                    },
-                    '&.Mui-focused fieldset': {
-                      borderColor: '#D96F32',
-                    },
-                  },
-                  '& .MuiInputBase-input': {
-                    padding: '12px 14px',
-                    fontSize: '14px',
-                  },
-                }}
-              />
-            </div>
-          </div>
-
-          {/* Account Information Section */}
-          <div className="bg-[#f9f9f9] p-5 rounded-lg mb-6 border border-[rgba(0,0,0,0.05)]">
-            <h3 className="text-[16px] font-semibold text-gray-800 mb-4">Account Information</h3>
-            <div className="space-y-3">
-              <div className="flex items-center justify-between py-2 border-b border-[rgba(0,0,0,0.05)]">
-                <span className="text-[14px] text-gray-600 font-medium">Role</span>
-                <span className="text-[14px] text-gray-800 font-semibold capitalize">
-                  {authUser?.role || 'admin'}
-                </span>
+              <div className="form-group">
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  Email Address <span className="text-primary">*</span>
+                </label>
+                <input
+                  type="email"
+                  name="email"
+                  value={user.email}
+                  disabled
+                  className="w-full h-[50px] px-4 rounded-xl border-2 border-transparent bg-gray-100 text-gray-500 cursor-not-allowed"
+                  placeholder="email@example.com"
+                />
+                <p className="text-xs text-gray-400 mt-1 ml-1">Email cannot be changed</p>
               </div>
-              <div className="flex items-center justify-between py-2 border-b border-[rgba(0,0,0,0.05)]">
-                <span className="text-[14px] text-gray-600 font-medium">Status</span>
-                <span className={`text-[14px] font-semibold ${
-                  authUser?.isVerified ? 'text-green-600' : 'text-red-600'
-                }`}>
-                  {authUser?.isVerified ? '✓ Verified' : '✗ Not Verified'}
-                </span>
+
+              <div className="form-group md:col-span-2">
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  Phone Number
+                </label>
+                <input
+                  type="text"
+                  name="phone"
+                  value={user.phone}
+                  onChange={handleChange}
+                  disabled={saving}
+                  className={`w-full h-[50px] px-4 rounded-xl border-2 bg-gray-50 focus:bg-white transition-smooth outline-none ${
+                    phoneError 
+                      ? 'border-red-300 focus:border-red-500' 
+                      : 'border-transparent focus:border-primary'
+                  }`}
+                  placeholder="Enter your phone number (e.g., 081234567890)"
+                />
+                {phoneError ? (
+                  <p className="text-sm text-red-500 mt-1 ml-1">{phoneError}</p>
+                ) : (
+                  <p className="text-xs text-gray-400 mt-1 ml-1">Format: 08xxxxxxxxxx or +62xxxxxxxxxxx</p>
+                )}
               </div>
-              {authUser?.createdAt && (
-                <div className="flex items-center justify-between py-2">
-                  <span className="text-[14px] text-gray-600 font-medium">Member since</span>
-                  <span className="text-[14px] text-gray-800 font-semibold">
-                    {new Date(authUser.createdAt).toLocaleDateString('id-ID', {
-                      year: 'numeric',
-                      month: 'long',
-                      day: 'numeric',
-                    })}
+            </div>
+
+            {/* Account Information Section */}
+            <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-6 rounded-2xl border border-gray-100">
+              <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                <span className="w-1 h-6 bg-primary rounded-full"></span>
+                Account Information
+              </h3>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-3 bg-white rounded-xl shadow-sm">
+                  <span className="text-sm text-gray-500 font-medium">Role</span>
+                  <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-lg text-sm font-bold capitalize">
+                    {authUser?.role || 'admin'}
                   </span>
                 </div>
-              )}
+                <div className="flex items-center justify-between p-3 bg-white rounded-xl shadow-sm">
+                  <span className="text-sm text-gray-500 font-medium">Status</span>
+                  <span className={`px-3 py-1 rounded-lg text-sm font-bold flex items-center gap-1 ${
+                    authUser?.isVerified ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'
+                  }`}>
+                    {authUser?.isVerified ? '✓ Verified' : '✗ Not Verified'}
+                  </span>
+                </div>
+                {authUser?.createdAt && (
+                  <div className="flex items-center justify-between p-3 bg-white rounded-xl shadow-sm">
+                    <span className="text-sm text-gray-500 font-medium">Member Using</span>
+                    <span className="text-sm text-gray-700 font-bold">
+                      {new Date(authUser.createdAt).toLocaleDateString('id-ID', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                      })}
+                    </span>
+                  </div>
+                )}
+                {originalData.updatedAt && (
+                   <div className="flex items-center justify-between px-3 pt-2">
+                    <span className="text-xs text-gray-400">Last profile update</span>
+                    <span className="text-xs text-gray-500 font-medium">
+                      {formatDate(originalData.updatedAt)}
+                    </span>
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
 
-          {/* Action Buttons */}
-          <div className="flex gap-3 pt-4 border-t border-[rgba(0,0,0,0.1)]">
-            <Button
-              type="submit"
-              variant="contained"
-              className="btn-g !px-8 !py-2.5 !text-[15px] !font-semibold"
-              disabled={saving}
-            >
-              {saving ? 'Saving...' : 'Save Changes'}
-            </Button>
-            <Button
-              type="button"
-              variant="outlined"
-              className="!px-8 !py-2.5 !text-[15px] !font-semibold !border-gray-300 !text-gray-700 hover:!bg-gray-50"
-              onClick={() => {
-                setUserData({
-                  name: authUser?.name || '',
-                  email: authUser?.email || '',
-                  phone: authUser?.phone || '',
-                });
-                setError('');
-                setSuccess('');
-              }}
-              disabled={saving}
-            >
-              Cancel
-            </Button>
-          </div>
-        </form>
+            {/* Action Buttons */}
+            <div className="flex items-center justify-end gap-4 pt-6 border-t border-gray-100">
+              <Button
+                type="button"
+                className="!h-[50px] !px-8 !rounded-xl !text-gray-600 !font-bold hover:!bg-gray-100 transition-smooth"
+                onClick={() => {
+                  setUserData({
+                    name: originalData.name,
+                    email: originalData.email,
+                    phone: originalData.phone,
+                  });
+                  setError('');
+                  setSuccess('');
+                  setNameError('');
+                  setPhoneError('');
+                }}
+                disabled={saving}
+              >
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                className="btn-g !h-[50px] !px-8 !rounded-xl !font-bold !text-white shadow-lg hover:shadow-xl transition-smooth"
+                disabled={saving || !hasChanges()}
+                startIcon={saving ? <CircularProgress size={20} color="inherit" /> : null}
+              >
+                {saving ? 'Saving Changes...' : 'Save Changes'}
+              </Button>
+            </div>
+          </form>
+        </div>
       </div>
-    </div>
+    </main>
   );
 }

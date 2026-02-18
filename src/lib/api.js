@@ -38,16 +38,32 @@ async function fetchAPI(endpoint, options = {}) {
 
   try {
     const response = await fetch(url, config);
-    const data = await response.json();
+    
+    // Check if response is JSON
+    const contentType = response.headers.get('content-type');
+    let data;
+    
+    if (contentType && contentType.includes('application/json')) {
+      data = await response.json();
+    } else {
+      // If not JSON, get text response
+      const text = await response.text();
+      throw new Error(text || `HTTP ${response.status}: ${response.statusText}`);
+    }
 
     if (!response.ok) {
-      throw new Error(data.message || 'Something went wrong');
+      throw new Error(data.message || data.error || `HTTP ${response.status}: ${response.statusText}`);
     }
 
     return data;
   } catch (error) {
     console.error('API Error:', error);
-    throw error;
+    // If error is already an Error object with message, throw it as is
+    if (error instanceof Error) {
+      throw error;
+    }
+    // Otherwise, wrap it in an Error
+    throw new Error(error.message || 'Something went wrong');
   }
 }
 
@@ -93,10 +109,16 @@ export const authAPI = {
       body: JSON.stringify({ email }),
     }),
 
-  resetPassword: (token, password) => 
+  verifyResetOTP: (email, otp) => 
+    fetchAPI('/auth/verify-reset-otp', {
+      method: 'POST',
+      body: JSON.stringify({ email, otp }),
+    }),
+
+  resetPassword: (email, otp, new_password) => 
     fetchAPI('/auth/reset-password', {
       method: 'POST',
-      body: JSON.stringify({ token, password }),
+      body: JSON.stringify({ email, otp, new_password }),
     }),
 };
 
@@ -124,6 +146,7 @@ export const usersAPI = {
     fetchAPI(`/users/${id}`, {
       method: 'DELETE',
     }),
+  getAddresses: (userId) => fetchAPI(`/users/${userId}/addresses`),
 };
 
 // Products API
@@ -230,6 +253,11 @@ export const dashboardAPI = {
     const queryString = new URLSearchParams(params).toString();
     return fetchAPI(`/dashboard/sales${queryString ? `?${queryString}` : ''}`);
   },
+};
+
+// Wishlist API (Admin)
+export const wishlistAPI = {
+  getAll: () => fetchAPI('/wishlist/admin/all'),
 };
 
 // Upload API

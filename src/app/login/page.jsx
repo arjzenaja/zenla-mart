@@ -37,97 +37,116 @@ const Login = () => {
   };
 
   return (
-    <section className="w-full fixed top-0 left-0 z-100 bg-white min-h-screen">
-      <img
-        src={"/patern1.png"}
-        alt="objek"
-        className="w-full h-fit object-cover"
-      />
-
-      <div className="w-full fixed top-0 left-0 py-3 z-10">
-        <div className="w-[90%] m-auto flex item-center justify-between">
-          <img src={"/logo.png"} alt="logo" width={250} height={250}/>
-
-          <div className="flex items-center gap-3">
-            <Link href={"/login"}>
-              <Button className="bg-gray-100! px-5! py-2! rounded-full! border! border-[rgba(0,0,0,0.1)] text-gray-900! font-[500]">
-                SIGN IN
-              </Button>
-            </Link>
-          </div>
-        </div>
+    <section className="w-full min-h-screen flex items-center justify-center p-4 relative overflow-hidden" 
+      style={{
+        background: 'linear-gradient(135deg, #1a1c23 0%, #111827 100%)'
+      }}>
+      
+      {/* Background Shapes */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full bg-primary/20 blur-[100px] animate-pulse"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full bg-blue-500/10 blur-[100px] animate-pulse" style={{ animationDelay: '2s' }}></div>
       </div>
 
-      <div className="absolute top-0 left-[20%] z-100 w-[60%] h-fit py-[100px]">
-        <h1 className="text-center text-[40px] font-extrabold w-[70%] m-auto">Welcome Back! Sign in with your credentials</h1>
-
-        <div className="flex items-center justify-center py-3">
-          <Button className="bg-gray-100! px-5! py-2! rounded-full! border! border-[rgba(0,0,0,0.1)]! text-gray-900! font-[500] capitalize! gap-2 font-bold!">Sign in with google <FcGoogle size={20}/></Button>
-        </div>
-
-        <div className="w-full flex items-center justify-center gap-3 py-3">
-          <span className="flex items-center w-[100px] h-[1px] bg-[rgba(0,0,0,0.2)]"></span>
-          <span className="text-[10px] lg:text-[14px] font-[500]">Or, Sign in with your email</span>
-          <span className="flex items-center w-[100px] h-[1px] bg-[rgba(0,0,0,0.2)]"></span>
-        </div>
-
-        <br />
-
-        {error && (
-          <div className="w-[50%] m-auto mb-4 p-3 bg-red-100 border border-red-400 text-red-700 rounded">
-            {error}
-          </div>
-        )}
-
-        <form className="w-[50%] m-auto" onSubmit={handleSubmit}>
-          <div className="form-group mb-2 flex flex-col gap-1">
-            <span className="text-[15px] text-gray-800">Email</span>
-            <input 
-              type="email" 
-              className="w-full h-[40px] border border-[rgba(0,0,0,0.2)] outline-none rounded-sm focus:border-[rgba(0,0,0,0.4)] px-3 text-[14px]"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              required
-            />
+      <div className="w-full max-w-md relative z-10 animate-scaleIn">
+        <div className="card-glass p-8 md:p-10 rounded-3xl border border-white/10 shadow-2xl backdrop-blur-xl">
+          <div className="text-center mb-8">
+            <div className="bg-white/10 w-20 h-20 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg rotate-3 hover:rotate-6 transition-smooth">
+              <img src={"/logo.png"} alt="logo" className="w-[140px] drop-shadow-md"/>
+            </div>
+            <h1 className="text-3xl font-extrabold text-white mb-2 tracking-tight">Welcome Back</h1>
+            <p className="text-gray-400 font-medium">Sign in to Zenla Admin Panel</p>
           </div>
 
-          <div className="form-group mb-2 flex flex-col gap-1">
-            <span className="text-[15px] text-gray-800">Password</span>
-            <input 
-              type="password" 
-              className="w-full h-[40px] border border-[rgba(0,0,0,0.2)] outline-none rounded-sm focus:border-[rgba(0,0,0,0.4)] px-3 text-[14px]"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              required
-            />
+          <div className="flex flex-col gap-4 mb-6">
+            <Button 
+              className="!bg-white !text-gray-800 !h-[50px] !rounded-xl !font-bold !normal-case hover:!bg-gray-50 flex items-center justify-center gap-3 shadow-md hover:shadow-lg hover:-translate-y-1 transition-all duration-300"
+            >
+              <FcGoogle size={24}/> Sign in with Google
+            </Button>
+            
+            <div className="flex items-center gap-4 text-gray-500 my-2">
+              <div className="h-[1px] bg-gray-700 flex-1"></div>
+              <span className="text-sm font-medium text-gray-400">OR</span>
+              <div className="h-[1px] bg-gray-700 flex-1"></div>
+            </div>
           </div>
 
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-0 -ml-[10px]">
-              <Checkbox 
-                {...label} 
-                checked={rememberMe}
-                onChange={(e) => setRememberMe(e.target.checked)}
-                size="small"
+          {error && (
+            <div className="w-full mb-6 p-4 bg-red-500/10 border border-red-500/30 text-red-200 rounded-xl flex items-center gap-3 animate-fadeIn">
+              <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
+              {error}
+            </div>
+          )}
+
+          <form className="flex flex-col gap-5" onSubmit={handleSubmit}>
+            <div className="form-group flex flex-col gap-2">
+              <label className="text-sm font-semibold text-gray-300 ml-1">Email Address</label>
+              <input 
+                type="email" 
+                className="w-full h-[55px] bg-white/5 border border-white/10 rounded-xl px-5 text-white placeholder-gray-500 focus:border-primary focus:bg-white/10 focus:ring-4 focus:ring-primary/10 outline-none transition-all duration-300"
+                placeholder="admin@zenlamart.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
               />
-              <span className="text-[15px] text-gray-800">Remember me</span>
             </div>
 
-            <Link href={"/forgot-password"} className="text-primary font-bold text-[15px] hover:text-gray-800">Forgot Password?</Link>
-          </div>
+            <div className="form-group flex flex-col gap-2">
+              <label className="text-sm font-semibold text-gray-300 ml-1">Password</label>
+              <input 
+                type="password" 
+                className="w-full h-[55px] bg-white/5 border border-white/10 rounded-xl px-5 text-white placeholder-gray-500 focus:border-primary focus:bg-white/10 focus:ring-4 focus:ring-primary/10 outline-none transition-all duration-300"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+              />
+            </div>
 
-          <div className="flex items-center justify-between my-3">
-            <span className="text-[15px] text-gray-800">Admin Login Only</span>
+            <div className="flex items-center justify-between mt-1">
+              <div className="flex items-center gap-2">
+                <Checkbox 
+                  {...label} 
+                  checked={rememberMe}
+                  onChange={(e) => setRememberMe(e.target.checked)}
+                  size="small"
+                  sx={{
+                    color: "rgba(255,255,255,0.4)",
+                    '&.Mui-checked': { color: "#D96F32" },
+                  }}
+                />
+                <span className="text-sm text-gray-400">Remember me</span>
+              </div>
+
+              <Link href={"/forgot-password"} className="text-primary font-bold text-sm hover:text-orange-400 transition-colors">
+                Forgot Password?
+              </Link>
+            </div>
+            
+            <Button 
+              type="submit"
+              className="!h-[55px] !rounded-xl !text-lg !font-bold !capitalize !text-white !shadow-lg !shadow-primary/30 hover:!shadow-primary/50 hover:!scale-[1.02] active:!scale-[0.98] transition-all duration-300 mt-2"
+              disabled={loading}
+              style={{
+                background: 'linear-gradient(135deg, #D96F32 0%, #E88A4D 100%)'
+              }}
+            >
+              {loading ? (
+                <div className="flex items-center gap-2">
+                  <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                  <span>Signing In...</span>
+                </div>
+              ) : 'Sign In to Dashboard'}
+            </Button>
+          </form>
+
+          <div className="mt-8 text-center">
+            <p className="text-gray-500 text-sm">
+              Protected by reCAPTCHA and subject to the Zenla <span className="text-gray-400 underline cursor-pointer hover:text-white">Privacy Policy</span>
+            </p>
           </div>
-          
-          <Button 
-            type="submit"
-            className="btn-g !px-7 w-full"
-            disabled={loading}
-          >
-            {loading ? 'Signing in...' : 'SIGN IN'}
-          </Button>
-        </form>
+        </div>
       </div>
     </section>
   );

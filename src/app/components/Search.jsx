@@ -1,16 +1,23 @@
-import React from 'react'
-import { IoSearchOutline } from 'react-icons/io5'
+import React from 'react';
+import { IoSearchOutline } from "react-icons/io5";
 
+const Search = ({ placeholder, value, onChange, className }) => {
+  return ( 
+    <div className={`relative flex items-center w-full max-w-md h-12 rounded-lg focus-within:shadow-lg bg-white overflow-hidden border border-gray-200 ${className}`}>
+        <div className="grid place-items-center h-full w-12 text-gray-300">
+            <IoSearchOutline className="text-xl" />
+        </div>
 
-const Search = (props) => {
-  return (
-    <div className="search bg-[#E6E6E6] h-[50px] rounded-md px-4 relative border border-[rgba(0,0,0,0.1)] hover:border-[rgba(0,0,0,0.3)]" style={{ width: props.width }}>
-      <input type="text" className='w-full h-full outline-none border-0 bg-transparent' placeholder={props.placeholder}/>
-      <button className='w-10 h-10 rounded-full absolute top-[5px] right-2 z-50 flex items-center justify-center cursor-pointer hover:bg-gray-300'>
-        <IoSearchOutline size={25}/>
-      </button>
+        <input
+            className="peer h-full w-full outline-none text-sm text-gray-700 pr-2 bg-transparent placeholder-gray-400"
+            type="text"
+            id="search"
+            placeholder={placeholder || "Search..."}
+            value={value}
+            onChange={onChange}
+        />
     </div>
-  )
-}
+  );
+};
 
-export default Search
+export default Search;

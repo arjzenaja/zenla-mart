@@ -1,134 +1,208 @@
 import React, { useState } from "react";
-import { Button } from "@mui/material";
-import { MdDateRange } from "react-icons/md";
-import { FaAngleDown } from "react-icons/fa";
+import { Button, MenuItem, Select } from "@mui/material";
+import { MdOutlineDateRange, MdKeyboardArrowDown, MdKeyboardArrowUp } from "react-icons/md";
+import { ordersAPI } from "@/lib/api";
 
-import InputLabel from "@mui/material/InputLabel";
-import MenuItem from "@mui/material/MenuItem";
-import FormHelperText from "@mui/material/FormHelperText";
-import FormControl from "@mui/material/FormControl";
-import Select, { SelectChangeEvent } from "@mui/material/Select";
+const OrderRow = ({ order }) => {
+  const [expanded, setExpanded] = useState(false);
+  const [status, setStatus] = useState(order?.status || "pending");
+  const [updating, setUpdating] = useState(false);
 
-const OrderRow = () => {
-  const [expendIndex, setExpendIndex] = useState(false);
+  if (!order) return null;
 
-  const [orderStatus, setOrderStatus] = React.useState('Confrim');
-
-  const handleChange = (event) => {
-    setOrderStatus(event.target.value);
+  const handleChange = async (event) => {
+    const newStatus = event.target.value;
+    try {
+      setUpdating(true);
+      await ordersAPI.updateStatus(order.id, newStatus);
+      setStatus(newStatus);
+    } catch (error) {
+      console.error("Failed to update order status", error);
+      alert("Gagal memperbarui status pesanan");
+    } finally {
+      setUpdating(false);
+    }
   };
 
+  const formatDate = (dateString) => {
+    if (!dateString) return "N/A";
+    const date = new Date(dateString);
+    return date.toLocaleDateString("id-ID", {
+      year: "numeric",
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  const formatCurrency = (value) => {
+    if (value === undefined || value === null) return "Rp0";
+    try {
+      return new Intl.NumberFormat("id-ID", {
+        style: "currency",
+        currency: "IDR",
+        minimumFractionDigits: 0,
+      }).format(value);
+    } catch {
+      return `Rp${value}`;
+    }
+  };
+
+  const getStatusBadgeClass = (status) => {
+    switch (status?.toLowerCase()) {
+      case 'delivered':
+      case 'selesai':
+        return 'badge-success';
+      case 'shipped':
+      case 'dikirim':
+        return 'badge-primary';
+      case 'processing':
+      case 'diproses':
+        return 'badge-info';
+      case 'cancelled':
+      case 'dibatalkan':
+        return 'badge-danger';
+      case 'pending':
+      case 'menunggu pembayaran':
+      default:
+        return 'badge-warning';
+    }
+  };
+
+  const address = order.address || {};
+  
   return (
     <>
-      <tr className="border-b-[1px] border-[rgba(0,0,0,0.1)] hover:bg-sky-100">
-        <td className="text-[14px] text-gray-700 px-4 py-2 font-bold">
+      <tr className={`border-b border-gray-50 transition-colors ${expanded ? 'bg-gray-50/50' : 'hover:bg-gray-50'}`}>
+        <td className="px-6 py-4">
           <Button
-            className="!min-w-[40px] !h-[40px] !w-[40px] !rounded-full !text-gray-500 !bg-gray-100 hover:!bg-gray-200"
-            onClick={() => setExpendIndex(!expendIndex)}
+            className={`!min-w-[32px] !w-[32px] !h-[32px] !rounded-full !bg-white !border !border-gray-200 !text-gray-500 hover:!bg-gray-100 hover:!text-primary transition-all ${expanded ? '!bg-primary !text-white !border-primary' : ''}`}
+            onClick={() => setExpanded(!expanded)}
           >
-            <FaAngleDown
-              size={25}
-              className={`transition-all ${expendIndex === true && "rotate-180"}`}
-            />
+            {expanded ? <MdKeyboardArrowUp size={20} /> : <MdKeyboardArrowDown size={20} />}
           </Button>
         </td>
-        <td className="text-[14px] text-gray-700 px-4 py-2 font-bold">#5413</td>
-        <td className="text-[14px] text-gray-700 font-[500] px-4 py-2">
-          <div className="flex items-center gap-3 w-[300px]">
-            <div className="rounded-cicle w-[50px] h-[50px] overflow-hidden">
-              <img src={"/profile.jpg"} alt="iamge" />
-            </div>
-
-            <div className="info flex flex-col gap-0">
-              <span className="text-gray-600 text-[14px]">Your name</span>
-              <span className="text-gray-500 text-[14px]">
-                youremail@gmail.com
-              </span>
-            </div>
-          </div>
+        <td className="px-6 py-4">
+           <span className="font-bold text-gray-800 text-sm">#{order.orderNumber || order.id?.substring(0, 8).toUpperCase()}</span>
         </td>
-        <td className="text-[14px] text-gray-700 font-[500] px-4 py-2 whitespace-nowrap">
-          pay_541231231
-        </td>
-        <td className="text-[14px] text-gray-700 font-[500] px-4 py-2 whitespace-nowrap">
-          +62 81234567
-        </td>
-        <td className="text-[14px] text-gray-700 font-[500] px-4 py-2">
-          <div className="w-[350px] py-3">
-            <span className="bg-gray-100 rounded-md px-2 py-1 border border-[rgba(0,0,0,0.1)]">
-              Home
+        <td className="px-6 py-4">
+          <div className="flex flex-col">
+            <span className="text-sm font-semibold text-gray-700">
+              {address.name || order.user?.name || "Customer"}
             </span>
-            <p className="pt-2">
-              Jl. DI Panjaitan No.128, Karangreja, Purwokerto Kidul, Kec.
-              Purwokerto Sel., Kabupaten Banyumas, Jawa Tengah 53141
-            </p>
+            <span className="text-xs text-gray-500">
+              {address.phone || order.user?.phone || order.userId || "No Contact"}
+            </span>
           </div>
         </td>
-        <td className="text-[14px] text-gray-700 font-[500] px-4 py-2">
-          53141
+        <td className="px-6 py-4">
+           <span className="bg-gray-100 text-gray-600 py-1 px-3 rounded-md text-xs font-bold uppercase tracking-wide">
+             {order.paymentMethod || "Cash"}
+           </span>
         </td>
-        <td className="text-[14px] text-gray-700 font-[500] px-4 py-2">$540</td>
-        <td className="text-[14px] text-gray-700 font-[500] px-4 py-2 whitespace-nowrap text-primary font-bold">
-          youruserid
+        <td className="px-6 py-4 text-center">
+            <span className={`badge ${order.paymentStatus === 'paid' ? 'badge-success' : 'badge-warning'}`}>
+                {order.paymentStatus || "Pending"}
+            </span>
         </td>
-        <td className="text-[14px] text-gray-700 font-[500] px-4 py-2">
-          <Select
-            value={orderStatus}
-            onChange={handleChange}
-            displayEmpty
-            inputProps={{ "aria-label": "Without label" }}
-            size="small"
-          >
-            <MenuItem value={"Confrim"}>Confrim</MenuItem>
-            <MenuItem value={"Ordered"}>Ordered</MenuItem>
-            <MenuItem value={"Delivered"}>Delivered</MenuItem>
-          </Select>
+        <td className="px-6 py-4 text-right">
+           <span className="text-sm font-bold text-primary">
+              {formatCurrency(order.total || 0)}
+           </span>
         </td>
-        <td className="text-[14px] text-gray-700 font-[500] px-4 py-2 whitespace-nowrap">
-          <div className="flex items-center gap-1">
-            <MdDateRange size={20} /> 2026-1-26
+        <td className="px-6 py-4 text-center">
+          <div className="flex items-center justify-center gap-2">
+            <Select
+              value={status}
+              onChange={handleChange}
+              displayEmpty
+              size="small"
+              disabled={updating}
+              className={`!h-[32px] !text-xs !font-bold uppercase tracking-wide !rounded-full ${getStatusBadgeClass(status).replace('badge-', 'bg-').replace('text-', '')} !border-0 shadow-sm`}
+              sx={{
+                '& .MuiSelect-select': { paddingRight: '24px !important', paddingLeft: '12px !important', paddingTop: '4px !important', paddingBottom: '4px !important' },
+                '& .MuiOutlinedInput-notchedOutline': { border: 'none' },
+                '& .MuiSvgIcon-root': { color: 'inherit', right: '4px' },
+                color: status === 'pending' ? '#B45309' : status === 'processing' ? '#0369A1' : status === 'shipped' ? '#FFFFFF' : status === 'delivered' ? '#15803D' : '#BE123C',
+                backgroundColor: status === 'pending' ? '#FFFBEB' : status === 'processing' ? '#E0F2FE' : status === 'shipped' ? '#D96F32' : status === 'delivered' ? '#DCFCE7' : '#FFE4E6',
+              }}
+            >
+              <MenuItem value={"pending"} className="!text-xs !uppercase !font-medium">Pending</MenuItem>
+              <MenuItem value={"processing"} className="!text-xs !uppercase !font-medium">Processing</MenuItem>
+              <MenuItem value={"shipped"} className="!text-xs !uppercase !font-medium">Shipped</MenuItem>
+              <MenuItem value={"delivered"} className="!text-xs !uppercase !font-medium">Delivered</MenuItem>
+              <MenuItem value={"cancelled"} className="!text-xs !uppercase !font-medium">Cancelled</MenuItem>
+            </Select>
+          </div>
+        </td>
+        <td className="px-6 py-4">
+          <div className="flex items-center gap-1 text-xs text-gray-500 font-medium">
+            <MdOutlineDateRange className="text-gray-400" size={16} />
+            {formatDate(order.createdAt)}
           </div>
         </td>
       </tr>
 
-      {expendIndex === true && (
-        <tr className="bg-gray-100">
-          <td colSpan={3} className="p-5">
-            <div className="flex items-center gap-3">
-              <div className="img rounded-md overflow-hidden w-[80px] h-[80px]">
-                <img
-                  src={
-                    "https://kliktobuy.com/wp-content/uploads/2023/09/nabati-siip-bites-roasted-corn-50-gr_8993175538909.jpg"
-                  }
-                  className="w-full h-full object-cover"
-                />
-              </div>
+      {/* Expanded Details */}
+      {expanded && (
+        <tr>
+          <td colSpan={8} className="p-0 border-b border-gray-100 bg-gray-50/30">
+            <div className="p-6 grid grid-cols-1 md:grid-cols-3 gap-6 animate-fadeIn">
+                {/* Product List */}
+                <div className="md:col-span-2 space-y-4">
+                    <h4 className="text-sm font-bold text-gray-800 uppercase tracking-wide border-b border-gray-200 pb-2">Order Items</h4>
+                    <div className="space-y-3">
+                        {order.items?.map((item, index) => (
+                            <div key={index} className="flex items-center justify-between p-3 bg-white rounded-xl border border-gray-100 shadow-sm">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center text-xl">
+                                        📦
+                                    </div>
+                                    <div>
+                                        <p className="text-sm font-bold text-gray-800 line-clamp-1">{item.productName || "Unknown Product"}</p>
+                                        <p className="text-xs text-gray-500">
+                                            {item.quantity} x {formatCurrency(item.price)}
+                                        </p>
+                                    </div>
+                                </div>
+                                <span className="font-bold text-gray-800 text-sm">{formatCurrency((item.price * item.quantity) || 0)}</span>
+                            </div>
+                        ))}
+                    </div>
+                </div>
 
-              <div className="info flex flex-col">
-                <h2 className="text-gray-900 text-[15px] font-[500]">
-                  Siip Nabati
-                </h2>
-                <span className="text-gray-600 text-[13px] font-[500]">
-                  Snacks
-                </span>
-                <span className="text-gray-600 text-[13px] font-[500]">
-                  Unit Price: $5.00
-                </span>
-              </div>
+                {/* Order Summary & Shipping Info */}
+                <div className="space-y-6">
+                    <div>
+                        <h4 className="text-sm font-bold text-gray-800 uppercase tracking-wide border-b border-gray-200 pb-2 mb-3">Shipping Details</h4>
+                        <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm text-sm space-y-2">
+                             <p className="flex justify-between"><span className="text-gray-500">Name:</span> <span className="font-medium text-gray-800">{address.name}</span></p>
+                             <p className="flex justify-between"><span className="text-gray-500">Phone:</span> <span className="font-medium text-gray-800">{address.phone}</span></p>
+                             <p className="flex flex-col mt-2"><span className="text-gray-500 mb-1">Address:</span> <span className="font-medium text-gray-800 leading-relaxed text-xs bg-gray-50 p-2 rounded-lg">{address.fullAddress || "No address provided"}</span></p>
+                        </div>
+                    </div>
+
+                    <div>
+                         <h4 className="text-sm font-bold text-gray-800 uppercase tracking-wide border-b border-gray-200 pb-2 mb-3">Payment Summary</h4>
+                         <div className="bg-white p-4 rounded-xl border border-gray-100 shadow-sm space-y-2">
+                            <div className="flex justify-between text-sm">
+                                <span className="text-gray-500">Subtotal</span>
+                                <span className="font-medium text-gray-800">{formatCurrency(order.subtotal || (order.total - (order.shippingCost || 0)))}</span>
+                            </div>
+                            <div className="flex justify-between text-sm">
+                                <span className="text-gray-500">Shipping</span>
+                                <span className="font-medium text-gray-800">{formatCurrency(order.shippingCost || 0)}</span>
+                            </div>
+                            <div className="border-t border-gray-100 my-2 pt-2 flex justify-between items-center">
+                                <span className="font-bold text-gray-800">Total Paid</span>
+                                <span className="font-extrabold text-primary text-lg">{formatCurrency(order.total || 0)}</span>
+                            </div>
+                         </div>
+                    </div>
+                </div>
             </div>
           </td>
-          <td colSpan={1} className="p-5">
-            X2
-          </td>
-          <td colSpan={1} className="p-5">
-            <span className="text-gray-950 font-[500]">$10.00</span>
-          </td>
-          <td colSpan={1} className="p-5"></td>
-          <td colSpan={1} className="p-5"></td>
-          <td colSpan={1} className="p-5"></td>
-          <td colSpan={1} className="p-5"></td>
-          <td colSpan={1} className="p-5"></td>
-          <td colSpan={1} className="p-5"></td>
         </tr>
       )}
     </>

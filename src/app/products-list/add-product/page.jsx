@@ -29,6 +29,14 @@ const AddProduct = () => {
   const [productBrand, setProductBrand] = useState("");
   const [productDiscount, setProductDiscount] = useState("");
   const [rating, setRating] = useState(0);
+  const [variants, setVariants] = useState([{ name: "", price: "", stock: "" }]);
+  const [productWeight, setProductWeight] = useState("");
+  const [productUnit, setProductUnit] = useState("pcs");
+  const [productComposition, setProductComposition] = useState("");
+  const [productAllergyInfo, setProductAllergyInfo] = useState("");
+  const [productExpiryEstimate, setProductExpiryEstimate] = useState("");
+  const [productShippingOrigin, setProductShippingOrigin] = useState("");
+  const [productShippingEstimate, setProductShippingEstimate] = useState("");
 
   useEffect(() => {
     fetchCategories();
@@ -81,6 +89,23 @@ const AddProduct = () => {
         setProductBrand(product.brand || "");
         setProductDiscount(product.discount?.toString() || "");
         setRating(product.rating || 0);
+        if (product.variants && Array.isArray(product.variants) && product.variants.length > 0) {
+          setVariants(product.variants.map(v => ({
+            id: v.id,
+            name: v.name || "",
+            price: v.price?.toString() || "",
+            stock: v.stock?.toString() || ""
+          })));
+        } else {
+          setVariants([{ name: "", price: "", stock: "" }]);
+        }
+        setProductWeight(product.weight?.toString() || "");
+        setProductUnit(product.unit || "pcs");
+        setProductComposition(product.composition || "");
+        setProductAllergyInfo(product.allergyInfo || "");
+        setProductExpiryEstimate(product.expiryEstimate || "");
+        setProductShippingOrigin(product.shippingOrigin || "");
+        setProductShippingEstimate(product.shippingEstimate || "");
         if (product.images && Array.isArray(product.images)) {
           setUploadedImages(product.images);
         }
@@ -152,6 +177,24 @@ const AddProduct = () => {
     setUploadedImages(uploadedImages.filter((_, i) => i !== index));
   };
 
+  const handleAddVariant = () => {
+    setVariants([...variants, { name: "", price: "", stock: "" }]);
+  };
+
+  const handleRemoveVariant = (index) => {
+    if (variants.length > 1) {
+      setVariants(variants.filter((_, i) => i !== index));
+    } else {
+      setVariants([{ name: "", price: "", stock: "" }]);
+    }
+  };
+
+  const handleVariantChange = (index, field, value) => {
+    const newVariants = [...variants];
+    newVariants[index][field] = value;
+    setVariants(newVariants);
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     
@@ -172,20 +215,41 @@ const AddProduct = () => {
         categoryId: categoryVal,
         brand: productBrand || undefined,
         discount: productDiscount ? parseFloat(productDiscount) : undefined,
-        rating: rating || 0,
+        rating: parseFloat(rating) || 0,
         isFeatured: isFeatureVal === "true",
+        variants: variants.filter(v => v.name.trim() !== "").map(v => ({
+          id: v.id,
+          name: v.name,
+          price: v.price ? parseFloat(v.price) : undefined,
+          stock: v.stock ? parseInt(v.stock) : 0
+        })),
+        weight: productWeight ? parseFloat(productWeight) : undefined,
+        unit: productUnit || undefined,
+        composition: productComposition || undefined,
+        allergyInfo: productAllergyInfo || undefined,
+        expiryEstimate: productExpiryEstimate || undefined,
+        shippingOrigin: productShippingOrigin || undefined,
+        shippingEstimate: productShippingEstimate || undefined,
         images: uploadedImages.length > 0 ? uploadedImages : [],
         isActive: true,
       };
 
+      // Debug logging
+      console.log("📦 Payload before submit:", {
+        stock: productData.stock,
+        variants: productData.variants,
+        hasVariants: productData.variants.length > 0,
+        variantStocks: productData.variants.map(v => ({ name: v.name, stock: v.stock }))
+      });
+
       if (editId) {
         await productsAPI.update(editId, productData);
-        alert('Product updated successfully!');
       } else {
         await productsAPI.create(productData);
-        alert('Product created successfully!');
       }
 
+      // Force refresh to show new product
+      router.refresh();
       router.push('/products-list');
     } catch (error) {
       console.error('Error saving product:', error);
@@ -196,215 +260,395 @@ const AddProduct = () => {
   };
 
   return (
-    <div className="px-5 py-5">
-      <div className="bg-white shadow-md rounded-md p-5">
-        <h2 className="text-[18px] text-gray-700 font-[600]">
-          {editId ? 'Edit Product' : 'Add Product'}
-        </h2>
+    <div className="p-8 max-w-7xl mx-auto">
+      <div className="flex items-center justify-between mb-8 animate-fadeIn">
+        <div>
+          <h1 className="text-3xl font-extrabold gradient-text mb-2">
+            {editId ? 'Edit Product' : 'Add New Product'}
+          </h1>
+          <p className="text-gray-600 text-lg">
+            {editId ? 'Update product details and inventory' : 'Create a new product for your store'}
+          </p>
+        </div>
+        <Button 
+          onClick={() => router.push('/products-list')}
+          className="bg-white text-gray-600 normal-case font-bold py-2.5 px-6 rounded-xl border border-gray-200 shadow-sm hover:shadow-md hover:bg-gray-50 transition-smooth"
+        >
+          Cancel
+        </Button>
+      </div>
 
+      <div className="card-premium p-8 animate-scaleIn shadow-premium">
         {loading && !editId && (
-          <div className="mt-5 p-4 bg-blue-50 rounded-md">
-            <p className="text-blue-600">Loading...</p>
+          <div className="mb-6 p-4 bg-primary/10 border border-primary/20 text-primary rounded-xl flex items-center gap-3 animate-pulse">
+            <span className="w-2 h-2 rounded-full bg-primary loading-dot"></span>
+            loading data...
           </div>
         )}
 
-        <form className="mt-5" onSubmit={handleSubmit}>
-          <div className="form-group mb-4 flex flex-col gap-1">
-            <span className="text-[15px] text-gray-800">Product Name <span className="text-red-500">*</span></span>
-            <input
-              type="text"
-              value={productName}
-              onChange={(e) => setProductName(e.target.value)}
-              required
-              className="w-full h-[40px] border border-[rgba(0,0,0,0.2)] outline-none rounded-b-sm focus:border-[rgba(0,0,0,0.4)] px-4"
-            />
-          </div>
-
-          <div className="form-group mb-4 flex flex-col gap-1">
-            <span className="text-[15px] text-gray-800">
-              Product Description
-            </span>
-            <textarea
-              value={productDescription}
-              onChange={(e) => setProductDescription(e.target.value)}
-              className="w-full h-[120px] border border-[rgba(0,0,0,0.2)] outline-none rounded-sm focus:border-[rgba(0,0,0,0.4)] px-3 py-3 text-[14px] resize-none"
-            />
-          </div>
-
-          <div className="grid grid-cols-4 gap-4">
-            <div className="col flex flex-col gap-1">
-              <span className="text-[15px] text-gray-800">
-                Product Category <span className="text-red-500">*</span>
-              </span>
-              <Select
-                value={categoryVal}
-                onChange={handleChangeCategory}
-                displayEmpty
-                required
-                inputProps={{ "aria-label": "Without label" }}
-                size="small"
-              >
-                <MenuItem value="">
-                  <em>{categories.length === 0 ? 'No categories available' : 'Select Category'}</em>
-                </MenuItem>
-                {categories.length > 0 ? (
-                  categories.map((category) => (
-                    <MenuItem key={category.id} value={category.id}>
-                      {category.name}
-                    </MenuItem>
-                  ))
-                ) : (
-                  <MenuItem value="" disabled>
-                    <em>Please add categories first</em>
-                  </MenuItem>
-                )}
-              </Select>
-              {categories.length === 0 && (
-                <p className="text-xs text-red-500 mt-1">
-                  No categories found. Please add categories in Category List first.
-                </p>
-              )}
-            </div>
-
-            <div className="col mb-4 flex flex-col gap-1">
-              <span className="text-[15px] text-gray-800">Product Price <span className="text-red-500">*</span></span>
-              <input
-                type="number"
-                value={productPrice}
-                onChange={(e) => setProductPrice(e.target.value)}
-                required
-                min="0"
-                step="0.01"
-                className="w-full h-[40px] border border-[rgba(0,0,0,0.2)] outline-none rounded-sm focus:border-[rgba(0,0,0,0.4)] px-3 py-3 text-[14px]"
-              />
-            </div>
-
-            <div className="col mb-4 flex flex-col gap-1">
-              <span className="text-[15px] text-gray-800">
-                Product Old Price
-              </span>
-              <input
-                type="number"
-                value={productOldPrice}
-                onChange={(e) => setProductOldPrice(e.target.value)}
-                min="0"
-                step="0.01"
-                className="w-full h-[40px] border border-[rgba(0,0,0,0.2)] outline-none rounded-sm focus:border-[rgba(0,0,0,0.4)] px-3 py-3 text-[14px]"
-              />
-            </div>
-
-            <div className="col flex flex-col gap-1">
-              <span className="text-[15px] text-gray-800">Is Featured?</span>
-              <Select
-                value={isFeatureVal}
-                onChange={handleChangeFeatureVal}
-                displayEmpty
-                inputProps={{ "aria-label": "Without label" }}
-                size="small"
-              >
-                <MenuItem value="true">True</MenuItem>
-                <MenuItem value="false">False</MenuItem>
-              </Select>
-            </div>
-
-            <div className="col mb-4 flex flex-col gap-1">
-              <span className="text-[15px] text-gray-800">Product Stock</span>
-              <input
-                type="number"
-                value={productStock}
-                onChange={(e) => setProductStock(e.target.value)}
-                min="0"
-                className="w-full h-[40px] border border-[rgba(0,0,0,0.2)] outline-none rounded-sm focus:border-[rgba(0,0,0,0.4)] px-3 py-3 text-[14px]"
-              />
-            </div>
-
-            <div className="col mb-4 flex flex-col gap-1">
-              <span className="text-[15px] text-gray-800">Product Brand</span>
-              <input
-                type="text"
-                value={productBrand}
-                onChange={(e) => setProductBrand(e.target.value)}
-                className="w-full h-[40px] border border-[rgba(0,0,0,0.2)] outline-none rounded-sm focus:border-[rgba(0,0,0,0.4)] px-3 py-3 text-[14px]"
-              />
-            </div>
-
-            <div className="col mb-4 flex flex-col gap-1">
-              <span className="text-[15px] text-gray-800">
-                Product Discount (%)
-              </span>
-              <input
-                type="number"
-                value={productDiscount}
-                onChange={(e) => setProductDiscount(e.target.value)}
-                min="0"
-                max="100"
-                step="0.01"
-                className="w-full h-[40px] border border-[rgba(0,0,0,0.2)] outline-none rounded-sm focus:border-[rgba(0,0,0,0.4)] px-3 py-3 text-[14px]"
-              />
-            </div>
-
-            <div className="col mb-4 flex flex-col gap-1">
-              <span className="text-[15px] text-gray-800">
-                Product Rating
-              </span>
-              <Rating
-                name="simple-controlled"
-                value={rating}
-                onChange={(event, newValue) => {
-                  setRating(newValue || 0);
-                }}
-              />
-            </div>
-          </div>
-
-
-          <div className="flex flex-col gap-1 mt-5">
-            <h2 className="text-[16px] text-gray-700 font-[600]">Media & Images</h2>
-
-            <div className="flex items-center gap-4 mt-3 flex-wrap">
-              {uploadedImages.map((imageUrl, index) => (
-                <div key={index} className='w-[150px] h-[120px] rounded-md bg-gray-100 p-5 border border-dashed border-[rgba(0,0,0,0.3)] flex items-center justify-center flex-col gap-2 relative overflow-hidden'>
-                  <img 
-                    src={imageUrl} 
-                    alt={`Product ${index + 1}`}
-                    className="w-full h-full object-cover"
-                  />
-                  <span 
-                    onClick={() => handleRemoveImage(index)}
-                    className="flex items-center justify-center bg-red-700 rounded-full w-6 h-6 absolute -top-[8px] -right-[8px] cursor-pointer hover:bg-red-800"
-                  >
-                    <IoMdClose size={20} className="text-white"/>
-                  </span>
-                </div>
-              ))}
-
-              <div className='w-[150px] h-[120px] rounded-md bg-gray-100 p-5 border border-dashed border-[rgba(0,0,0,0.3)] flex items-center justify-center flex-col gap-2 relative'>
-                <input 
-                  type="file" 
-                  accept="image/*"
-                  onChange={handleImageUpload}
-                  className='absolute top-0 left-0 w-full h-full z-50 opacity-0 cursor-pointer'
-                  disabled={loading}
+        <form onSubmit={handleSubmit} className="space-y-8">
+          {/* General Information */}
+          <div className="space-y-6">
+            <h2 className="text-xl font-bold text-gray-800 border-b border-gray-100 pb-2">
+              General Information
+            </h2>
+            
+            <div className="grid grid-cols-1 gap-6">
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-700">
+                  Product Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="text"
+                  value={productName}
+                  onChange={(e) => setProductName(e.target.value)}
+                  required
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 transition-smooth outline-none text-gray-700 font-medium"
+                  placeholder="e.g. Premium Chocolate Cake"
                 />
-                <FaRegImages size={40} className='text-gray-400'/>
-                <span className='text-gray-600 text-[13px]'>Image Upload</span>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-700">
+                  Description
+                </label>
+                <textarea
+                  value={productDescription}
+                  onChange={(e) => setProductDescription(e.target.value)}
+                  className="w-full h-[120px] px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 transition-smooth outline-none text-gray-700 font-medium resize-none"
+                  placeholder="Describe your product..."
+                />
               </div>
             </div>
           </div>
 
-          <br />
+          {/* Pricing & Category */}
+          <div className="space-y-6">
+            <h2 className="text-xl font-bold text-gray-800 border-b border-gray-100 pb-2">
+              Pricing & Organization
+            </h2>
 
-          <div className="flex items-center gap-3">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-700">
+                  Category <span className="text-red-500">*</span>
+                </label>
+                <Select
+                  value={categoryVal}
+                  onChange={handleChangeCategory}
+                  displayEmpty
+                  required
+                  inputProps={{ "aria-label": "Without label" }}
+                  size="small"
+                  className="w-full rounded-xl bg-gray-50 focus:bg-white text-gray-700 font-medium field-premium"
+                  sx={{ borderRadius: '0.75rem',  '.MuiOutlinedInput-notchedOutline': { borderColor: '#e5e7eb' }, '&:hover .MuiOutlinedInput-notchedOutline': { borderColor: '#d1d5db' }, '&.Mui-focused .MuiOutlinedInput-notchedOutline': { borderColor: 'var(--color-primary)' } }}
+                >
+                  <MenuItem value="">
+                    <em className="text-gray-400">{categories.length === 0 ? 'No categories' : 'Select Category'}</em>
+                  </MenuItem>
+                  {categories.map((category) => (
+                    <MenuItem key={category.id} value={category.id}>
+                      {category.name}
+                    </MenuItem>
+                  ))}
+                </Select>
+                {categories.length === 0 && (
+                  <p className="text-xs text-red-500 mt-1">
+                    No categories found. Please add categories first.
+                  </p>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-700">
+                  Price <span className="text-red-500">*</span>
+                </label>
+                <input
+                  type="number"
+                  value={productPrice}
+                  onChange={(e) => setProductPrice(e.target.value)}
+                  required
+                  min="0"
+                  step="0.01"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 transition-smooth outline-none text-gray-700 font-medium"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-700">
+                  Old Price
+                </label>
+                <input
+                  type="number"
+                  value={productOldPrice}
+                  onChange={(e) => setProductOldPrice(e.target.value)}
+                  min="0"
+                  step="0.01"
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 transition-smooth outline-none text-gray-700 font-medium"
+                />
+              </div>
+
+               <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-700">
+                  Discount (%)
+                </label>
+                <input
+                  type="number"
+                  value={productDiscount}
+                  onChange={(e) => setProductDiscount(e.target.value)}
+                  min="0"
+                  max="100"
+                  step="0.01"
+                   className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 transition-smooth outline-none text-gray-700 font-medium"
+                />
+              </div>
+            </div>
+          </div>
+          
+           {/* Inventory & Details */}
+           <div className="space-y-6">
+            <h2 className="text-xl font-bold text-gray-800 border-b border-gray-100 pb-2">
+              Inventory & Details
+            </h2>
+            
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+               <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-700">
+                  Stock Quantity
+                </label>
+                <input
+                  type="number"
+                  value={productStock}
+                  onChange={(e) => setProductStock(e.target.value)}
+                  min="0"
+                   className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 transition-smooth outline-none text-gray-700 font-medium"
+                />
+              </div>
+              
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-700">
+                  Brand
+                </label>
+                <input
+                  type="text"
+                  value={productBrand}
+                  onChange={(e) => setProductBrand(e.target.value)}
+                   className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 transition-smooth outline-none text-gray-700 font-medium"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-700">Feature Status</label>
+                 <Select
+                  value={isFeatureVal}
+                  onChange={handleChangeFeatureVal}
+                  displayEmpty
+                  inputProps={{ "aria-label": "Without label" }}
+                  size="small"
+                   className="w-full rounded-xl bg-gray-50 focus:bg-white text-gray-700 font-medium"
+                  sx={{ borderRadius: '0.75rem', '.MuiOutlinedInput-notchedOutline': { borderColor: '#e5e7eb' } }}
+                >
+                  <MenuItem value="false">Standard</MenuItem>
+                  <MenuItem value="true">Featured Product</MenuItem>
+                </Select>
+              </div>
+
+               <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-700 block mb-1">
+                  Rating (Initial)
+                </label>
+                 <Rating
+                  name="simple-controlled"
+                  value={rating}
+                  onChange={(event, newValue) => {
+                    setRating(newValue || 0);
+                  }}
+                  size="large"
+                />
+              </div>
+            </div>
+            
+           {/* Product Variants */}
+           <div className="space-y-6">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-2">
+              <h2 className="text-xl font-bold text-gray-800">
+                Product Variants
+              </h2>
+              <Button 
+                onClick={handleAddVariant}
+                className="!bg-primary/10 !text-primary !normal-case !font-bold !rounded-lg !px-4 hover:!bg-primary hover:!text-white transition-all"
+              >
+                + Add Variant
+              </Button>
+            </div>
+            
+            <div className="space-y-4">
+              {variants.map((variant, index) => (
+                <div key={index} className="grid grid-cols-1 md:grid-cols-12 gap-4 p-4 bg-gray-50 rounded-2xl border border-gray-200 relative group animate-fadeIn">
+                  <div className="md:col-span-1 flex items-center justify-center font-bold text-gray-400">
+                    {index + 1}
+                  </div>
+                  <div className="md:col-span-4 space-y-1">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase">Nama Varian</label>
+                    <input
+                      type="text"
+                      value={variant.name}
+                      onChange={(e) => handleVariantChange(index, "name", e.target.value)}
+                      placeholder="e.g. Rasa Vanila / Size XL"
+                      className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-primary outline-none text-sm"
+                    />
+                  </div>
+                  <div className="md:col-span-3 space-y-1">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase">Harga (Opsional)</label>
+                    <input
+                      type="number"
+                      value={variant.price}
+                      onChange={(e) => handleVariantChange(index, "price", e.target.value)}
+                      placeholder="Kosongkan jika sama"
+                      className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-primary outline-none text-sm"
+                    />
+                  </div>
+                  <div className="md:col-span-3 space-y-1">
+                    <label className="text-[10px] font-bold text-gray-500 uppercase">Stok</label>
+                    <input
+                      type="number"
+                      value={variant.stock}
+                      onChange={(e) => handleVariantChange(index, "stock", e.target.value)}
+                      placeholder="0"
+                      className="w-full px-4 py-2 rounded-lg border border-gray-200 focus:border-primary outline-none text-sm"
+                    />
+                  </div>
+                  <div className="md:col-span-1 flex items-center justify-center pt-5">
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveVariant(index)}
+                      className="text-red-400 hover:text-red-600 transition-colors p-2"
+                    >
+                      <IoMdClose size={20} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+              
+              <p className="text-xs text-gray-500 italic px-2">
+                * Jika produk memiliki varian, stok total produk akan dihitung otomatis dari jumlah stok semua varian.
+              </p>
+            </div>
+           </div>
+            
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-4">
+               <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-700">Composition</label>
+                <textarea
+                  value={productComposition}
+                  onChange={(e) => setProductComposition(e.target.value)}
+                  className="w-full h-[80px] px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 transition-smooth outline-none text-gray-700 font-medium resize-none"
+                  placeholder="Ingredients list..."
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-700">Allergy Info</label>
+                <textarea
+                  value={productAllergyInfo}
+                  onChange={(e) => setProductAllergyInfo(e.target.value)}
+                  className="w-full h-[80px] px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 transition-smooth outline-none text-gray-700 font-medium resize-none"
+                  placeholder="Contains milk, soy..."
+                />
+              </div>
+             </div>
+             
+             <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-4">
+               <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-700">Expiry Estimate</label>
+                 <input
+                  type="text"
+                  value={productExpiryEstimate}
+                  onChange={(e) => setProductExpiryEstimate(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 transition-smooth outline-none text-gray-700 font-medium"
+                />
+              </div>
+               <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-700">Shipping Origin</label>
+                 <input
+                  type="text"
+                  value={productShippingOrigin}
+                  onChange={(e) => setProductShippingOrigin(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 transition-smooth outline-none text-gray-700 font-medium"
+                />
+              </div>
+               <div className="space-y-2">
+                <label className="text-sm font-bold text-gray-700">Shipping Estimate</label>
+                 <input
+                  type="text"
+                  value={productShippingEstimate}
+                  onChange={(e) => setProductShippingEstimate(e.target.value)}
+                  className="w-full px-4 py-3 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 transition-smooth outline-none text-gray-700 font-medium"
+                />
+              </div>
+             </div>
+           </div>
+
+
+          {/* Media & Images */}
+          <div className="space-y-4">
+            <h2 className="text-xl font-bold text-gray-800 border-b border-gray-100 pb-2">
+             Product Images
+            </h2>
+
+            <div className="flex items-center gap-4 mt-3 flex-wrap">
+              {uploadedImages.map((imageUrl, index) => (
+                <div key={index} className='w-[160px] h-[160px] rounded-2xl bg-white p-2 border border-gray-200 shadow-sm relative group overflow-hidden'>
+                   <div className="w-full h-full rounded-xl overflow-hidden">
+                    <img 
+                      src={imageUrl} 
+                      alt={`Product ${index + 1}`}
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    />
+                  </div>
+                  <button 
+                    type="button"
+                    onClick={() => handleRemoveImage(index)}
+                    className="absolute top-2 right-2 w-8 h-8 bg-red-500 text-white rounded-full flex items-center justify-center shadow-lg transform scale-0 group-hover:scale-100 transition-all duration-300 hover:bg-red-600"
+                  >
+                    <IoMdClose size={18} />
+                  </button>
+                </div>
+              ))}
+
+              <div className='w-[160px] h-[160px] rounded-2xl bg-gray-50 border-2 border-dashed border-gray-300 hover:border-primary hover:bg-primary/5 transition-all duration-300 flex flex-col items-center justify-center relative cursor-pointer group'>
+                <input 
+                  type="file" 
+                  accept="image/*"
+                  onChange={handleImageUpload}
+                  className='absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10'
+                  disabled={loading}
+                />
+                <div className="w-12 h-12 rounded-full bg-white flex items-center justify-center shadow-sm mb-3 group-hover:scale-110 transition-transform">
+                   <FaRegImages size={24} className='text-primary'/>
+                </div>
+                <span className='text-gray-600 text-xs font-bold'>Upload Image</span>
+                <span className='text-gray-400 text-[10px] mt-1'>Max 5MB</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center gap-4 pt-6 mt-8 border-t border-gray-100">
             <Button 
               type="submit" 
-              className="btn-g !px-8"
+              className="btn-g !px-8 !py-3 !rounded-xl !text-white !font-bold !normal-case shadow-lg hover:shadow-xl hover:scale-105 transition-smooth"
               disabled={loading}
             >
-              {loading ? 'Saving...' : (editId ? 'Update Product' : 'Publish & View')}
+              {loading ? (
+                 <div className="flex items-center gap-2">
+                  <span className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></span>
+                  Processing...
+                 </div>
+              ) : (editId ? 'Update Product' : 'Publish Product')}
             </Button>
             <Button 
               type="button"
-              className="btn-border-g !px-8"
+              className="!bg-white !text-gray-600 !border !border-gray-200 !px-8 !py-3 !rounded-xl !font-bold !normal-case hover:!bg-gray-50 hover:!shadow-md transition-smooth"
               onClick={() => router.push('/products-list')}
               disabled={loading}
             >

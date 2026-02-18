@@ -42,16 +42,16 @@ const DashboardBoxes = () => {
 
   if (loading) {
     return (
-      <div className="grid grid-cols-4 gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
         {[1, 2, 3, 4].map((i) => (
-          <div key={i} className="p-5 bg-gray-200 rounded-md animate-pulse h-[120px]"></div>
+          <div key={i} className="p-6 rounded-2xl skeleton h-[140px] animate-shimmer"></div>
         ))}
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-4 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 md:gap-6">
       <Box
         title="Total Users"
         count={stats.totalUsers.toString()}
