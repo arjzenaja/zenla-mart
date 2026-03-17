@@ -9,10 +9,12 @@ import { HiOutlineShoppingBag } from 'react-icons/hi'
 import { FiUser, FiLogOut, FiChevronDown, FiMenu, FiX } from 'react-icons/fi'
 import Nav from './Nav'
 import { isAuthenticated } from '@/utils/auth'
+import { useSession, signOut } from 'next-auth/react'
 import { userAPI, authAPI, cartAPI, wishlistAPI, addressAPI, categoriesAPI } from '@/lib/api'
 import { Button, Menu, MenuItem, Drawer, Box, IconButton } from '@mui/material'
 
 const Header = () => {
+  const { data: session, status } = useSession()
   const router = useRouter()
   const [user, setUser] = useState(null)
   const [loadingUser, setLoadingUser] = useState(true)
@@ -25,6 +27,13 @@ const Header = () => {
   const [wishlistCount, setWishlistCount] = useState(0)
   const [activeAddress, setActiveAddress] = useState(null)
   const [scrolled, setScrolled] = useState(false)
+
+  useEffect(() => {
+    if (status === 'authenticated' && session?.accessToken) {
+      localStorage.setItem('token', session.accessToken);
+      checkAuthAndData();
+    }
+  }, [session, status]);
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -161,6 +170,10 @@ const Header = () => {
   const handleLogout = async () => {
     try {
       await authAPI.logout()
+      localStorage.removeItem('token');
+      if (status === 'authenticated') {
+        await signOut({ redirect: false })
+      }
       setUser(null)
       setCartCount(0)
       setWishlistCount(0)

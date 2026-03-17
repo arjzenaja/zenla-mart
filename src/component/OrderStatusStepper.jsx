@@ -7,7 +7,10 @@ const OrderStatusStepper = ({ status, isPickup = false }) => {
     processing: 1,
     shipped: 2,
     delivered: 3,
-    // Pickup specific mappings (if backend uses these)
+    // Pickup specific mappings
+    ready_for_pickup: 2,
+    picked_up: 3,
+    // Legacy support (if needed)
     ready: 2,
     completed: 3,
   }
@@ -16,11 +19,9 @@ const OrderStatusStepper = ({ status, isPickup = false }) => {
   let currentStatus = status?.toLowerCase()
   
   if (isPickup) {
-    // If it's pickup, we map standard delivery statuses to pickup steps
-    // shipped -> ready (step 2)
-    // delivered -> completed (step 3)
-    if (currentStatus === 'shipped') currentStatus = 'ready'
-    if (currentStatus === 'delivered') currentStatus = 'completed'
+    // Legacy status mapping if needed
+    if (currentStatus === 'shipped') currentStatus = 'ready_for_pickup'
+    if (currentStatus === 'delivered') currentStatus = 'picked_up'
   }
 
   const currentIndex = statusMap[currentStatus] ?? 0
@@ -72,14 +73,14 @@ const OrderStatusStepper = ({ status, isPickup = false }) => {
       color: 'from-blue-400 to-cyan-500',
     },
     {
-      key: 'ready',
+      key: 'ready_for_pickup',
       label: 'Siap Diambil',
       description: 'Pesanan dapat diambil di toko.',
-      icon: FiHome, // Using Store/Home icon for pickup
+      icon: FiHome,
       color: 'from-purple-400 to-pink-500',
     },
     {
-      key: 'completed',
+      key: 'picked_up',
       label: 'Selesai',
       description: 'Pesanan telah diambil.',
       icon: FiCheckCircle,

@@ -38,12 +38,13 @@ export default function Home() {
         {/* Personalization sections - White background */}
         <section className="mb-8 md:mb-12 fade-in-up">
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 md:p-8 lg:p-10">
-            <div className="grid gap-8 lg:grid-cols-3">
-              <div className="lg:col-span-2 space-y-8">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12">
+              <div className="lg:col-span-8 space-y-12">
                 <RecommendedForYou />
+                <div className="h-px bg-gray-100 w-full" />
                 <BuyAgain />
               </div>
-              <div className="space-y-8">
+              <div className="lg:col-span-4 lg:border-l lg:border-gray-100 lg:pl-10">
                 <RecentlyViewed />
               </div>
             </div>

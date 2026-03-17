@@ -9,6 +9,7 @@ import Link from 'next/link'
 import { FcGoogle } from 'react-icons/fc'
 import { useRouter } from 'next/navigation'
 import { authAPI } from '@/lib/api'
+import { signIn } from 'next-auth/react'
 import { handleRedirectAfterLogin } from '@/utils/redirect'
 import Container from '@/component/ui/Container'
 import FormField from '@/component/ui/FormField'
@@ -153,6 +154,7 @@ const Login = () => {
 
           {/* Google Sign In */}
           <MUIButton
+            onClick={() => signIn("google", { callbackUrl: "/" })}
             startIcon={<FcGoogle/>}
             variant='outlined'
             size='large'

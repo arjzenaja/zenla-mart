@@ -64,7 +64,10 @@ const OrderDetailPage = () => {
         return 'bg-blue-100 text-blue-800 border-blue-200'
       case 'shipped':
         return 'bg-purple-100 text-purple-800 border-purple-200'
+      case 'ready_for_pickup':
+        return 'bg-indigo-100 text-indigo-800 border-indigo-200'
       case 'delivered':
+      case 'picked_up':
         return 'bg-green-100 text-green-800 border-green-200'
       case 'cancelled':
         return 'bg-red-100 text-red-800 border-red-200'
@@ -81,7 +84,10 @@ const OrderDetailPage = () => {
         return <FiPackage className="text-blue-600" size={20} />
       case 'shipped':
         return <FiTruck className="text-purple-600" size={20} />
+      case 'ready_for_pickup':
+        return <FiHome className="text-indigo-600" size={20} />
       case 'delivered':
+      case 'picked_up':
         return <FiCheckCircle className="text-green-600" size={20} />
       default:
         return <FiClock className="text-gray-600" size={20} />
@@ -333,7 +339,11 @@ const OrderDetailPage = () => {
                 </div>
                 <div className={`px-5 py-2.5 rounded-full border-2 flex items-center gap-2 backdrop-blur-md bg-white/60 shadow-lg hover:shadow-xl transition-all ${getStatusColor(order.status)}`}>
                   {getStatusIcon(order.status)}
-                  <span className="font-[700] capitalize">{order.status || 'Pending'}</span>
+                  <span className="font-[700] capitalize">
+                    {order.status === 'ready_for_pickup' ? 'Ready for Pickup' : 
+                     order.status === 'picked_up' ? 'Picked Up' : 
+                     (order.status || 'Pending')}
+                  </span>
                 </div>
               </div>
             </div>
@@ -456,9 +466,7 @@ const OrderDetailPage = () => {
                   </div>
                   <div className="flex justify-between text-[15px] p-3 rounded-lg hover:bg-gray-50 transition-colors">
                     <span className="text-gray-600 font-[500]">Biaya Ongkir</span>
-                    <span className="font-[600] text-gray-900">
-                      {order.shippingCost > 0 ? formatCurrency(order.shippingCost) : formatCurrency(0)}
-                    </span>
+                    <span className="font-[600] text-emerald-600">Gratis</span>
                   </div>
                   {(order.tax || order.tax === 0) && order.tax > 0 && (
                     <div className="flex justify-between text-[15px] p-3 rounded-lg hover:bg-gray-50 transition-colors">
@@ -495,18 +503,22 @@ const OrderDetailPage = () => {
                   </h2>
                 </div>
                 <div className="p-6 space-y-4 text-[14px] text-gray-700">
-                  <div className="flex justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
-                    <span className="text-gray-600 font-[500]">Kurir / Metode Pengiriman</span>
-                    <span className="font-[600] capitalize text-gray-900">
-                      {order.shippingMethod || 'Standar'}
-                    </span>
-                  </div>
-                  <div className="flex justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
-                    <span className="text-gray-600 font-[500]">Estimasi Pengiriman</span>
-                    <span className="font-[600] text-gray-900">
-                      {order.shippingEstimate || 'Estimasi pengiriman akan diinformasikan kemudian.'}
-                    </span>
-                  </div>
+                  {order.shippingMethod?.toLowerCase() !== 'pickup' && (
+                    <div className="flex justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                      <span className="text-gray-600 font-[500]">Kurir / Metode Pengiriman</span>
+                      <span className="font-[600] capitalize text-gray-900">
+                        {order.shippingMethod || 'Dikirim'}
+                      </span>
+                    </div>
+                  )}
+                  {order.shippingMethod?.toLowerCase() === 'pickup' && (
+                    <div className="flex justify-between p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                      <span className="text-gray-600 font-[500]">Metode Pengiriman</span>
+                      <span className="font-[600] capitalize text-gray-900">
+                        Ambil di Toko
+                      </span>
+                    </div>
+                  )}
                   {order.trackingNumber && (
                     <div className="flex justify-between p-3 rounded-lg bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200">
                       <span className="text-blue-700 font-[600]">Nomor Resi</span>

@@ -50,7 +50,7 @@ export async function GET(request, { params }) {
 
     // Calculate invoice data
     const subtotal = order.subtotal || 0;
-    const shippingCost = order.shippingCost || 0;
+    const shippingCost = 0;
     const tax = 0; // Pajak dihapus
     const discount = order.discount || 0;
     const total = order.total || (subtotal + shippingCost - discount);
@@ -99,7 +99,7 @@ export async function GET(request, { params }) {
     let normalizedPaymentMethod = rawPaymentMethod
     if (rawPaymentMethod === 'bank' || rawPaymentMethod === 'transfer' || rawPaymentMethod === 'bank_transfer') {
       normalizedPaymentMethod = 'BANK_TRANSFER'
-    } else if (rawPaymentMethod === 'e-wallet' || rawPaymentMethod === 'ewallet') {
+    } else if (rawPaymentMethod === 'e-wallet' || rawPaymentMethod === 'ewallet' || rawPaymentMethod === 'e_wallet') {
       normalizedPaymentMethod = 'EWALLET'
     } else if (rawPaymentMethod === 'cash' || rawPaymentMethod === 'cod') {
       normalizedPaymentMethod = 'COD'

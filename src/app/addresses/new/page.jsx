@@ -29,12 +29,21 @@ const NewAddressPage = () => {
     label: 'Home',
     isDefault: false
   })
+  const [returnPath, setReturnPath] = useState('/checkout')
 
   useEffect(() => {
     // Check if user is authenticated
     if (!isAuthenticated()) {
       router.push('/login')
       return
+    }
+
+    // Set return path from localStorage after mount
+    if (typeof window !== 'undefined') {
+      const storedPath = localStorage.getItem('addressReturnPath')
+      if (storedPath) {
+        setReturnPath(storedPath)
+      }
     }
   }, [router])
 
@@ -97,18 +106,12 @@ const NewAddressPage = () => {
       await addressAPI.create(addressData)
       showToast('Address created successfully', 'success')
       
-      // Redirect back to checkout or addresses page
-      const returnPath = typeof window !== 'undefined' 
-        ? localStorage.getItem('addressReturnPath') || '/checkout'
-        : '/checkout'
-      
-      if (typeof window !== 'undefined') {
-        localStorage.removeItem('addressReturnPath')
-      }
-      
       // Small delay to show success toast
       setTimeout(() => {
         router.push(returnPath)
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('addressReturnPath')
+        }
       }, 500)
     } catch (error) {
       console.error('Error creating address:', error)
@@ -120,20 +123,13 @@ const NewAddressPage = () => {
     }
   }
 
-  const getReturnPath = () => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('addressReturnPath') || '/checkout'
-    }
-    return '/checkout'
-  }
-
   return (
     <section className="bg-gray-100 py-8 min-h-screen">
       <div className="container">
         <div className="max-w-3xl mx-auto">
           {/* Back Button */}
           <div className="mb-4">
-            <Link href={getReturnPath()}>
+            <Link href={returnPath}>
               <Button
                 variant="text"
                 className="!text-gray-600 !capitalize !px-0 hover:!text-primary"
@@ -319,7 +315,7 @@ const NewAddressPage = () => {
 
                 {/* Action Buttons */}
                 <div className="flex gap-3 pt-4 border-t border-gray-200">
-                  <Link href={getReturnPath()} className="flex-1">
+                  <Link href={returnPath} className="flex-1">
                     <Button
                       variant="outlined"
                       className="w-full !border-gray-300 !text-gray-700 !capitalize !py-2.5 hover:!bg-gray-50"

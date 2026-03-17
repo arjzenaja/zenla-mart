@@ -118,12 +118,12 @@ const Banners = () => {
         })}
       </Swiper>
 
-      {/* Custom Navigation Buttons - Top Right */}
+      {/* Custom Navigation Buttons - Sides */}
       {banners.length > 1 && (
-        <div className='absolute -top-12 md:-top-16 right-0 flex gap-2 md:gap-3 z-20'>
+        <>
           <button
             onClick={() => swiperRef.current?.swiper.slidePrev()}
-            className='flex items-center justify-center w-11 h-11 md:w-13 md:h-13 bg-orange-100 hover:bg-orange-200 text-orange-600 rounded-full shadow-md transition-all duration-300 hover:scale-110 hover:shadow-lg'
+            className='absolute left-2 md:left-4 top-1/2 -translate-y-1/2 flex items-center justify-center w-10 h-10 md:w-12 md:h-12 bg-white/80 hover:bg-white text-orange-600 rounded-full shadow-lg z-20 transition-all duration-300 hover:scale-110 hover:shadow-xl'
             aria-label='Previous banner'
           >
             <svg className='w-6 h-6' fill='currentColor' viewBox='0 0 24 24'>
@@ -132,14 +132,14 @@ const Banners = () => {
           </button>
           <button
             onClick={() => swiperRef.current?.swiper.slideNext()}
-            className='flex items-center justify-center w-11 h-11 md:w-13 md:h-13 bg-orange-100 hover:bg-orange-200 text-orange-600 rounded-full shadow-md transition-all duration-300 hover:scale-110 hover:shadow-lg'
+            className='absolute right-2 md:right-4 top-1/2 -translate-y-1/2 flex items-center justify-center w-10 h-10 md:w-12 md:h-12 bg-white/80 hover:bg-white text-orange-600 rounded-full shadow-lg z-20 transition-all duration-300 hover:scale-110 hover:shadow-xl'
             aria-label='Next banner'
           >
             <svg className='w-6 h-6' fill='currentColor' viewBox='0 0 24 24'>
               <path d='M10 6L8.59 7.41 12.17 11 8.59 14.59 10 16l6-6z' />
             </svg>
           </button>
-        </div>
+        </>
       )}
     </div>
   )

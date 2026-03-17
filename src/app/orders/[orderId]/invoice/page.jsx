@@ -659,6 +659,12 @@ const InvoicePage = () => {
                       <td colSpan="4" className="px-6 py-3 text-right text-sm font-medium text-gray-500 pt-6">Sub total</td>
                       <td className="px-6 py-3 text-right text-sm font-bold text-gray-800 pt-6">{formatCurrency(invoice.subtotal)}</td>
                     </tr>
+                    {invoice.shipping === 0 && (
+                      <tr>
+                        <td colSpan="4" className="px-6 py-2 text-right text-sm font-medium text-gray-500">Shipping Cost</td>
+                        <td className="px-6 py-2 text-right text-sm font-bold text-emerald-600">Gratis</td>
+                      </tr>
+                    )}
                     {invoice.shipping > 0 && (
                       <tr>
                         <td colSpan="4" className="px-6 py-2 text-right text-sm font-medium text-gray-500">Shipping Cost</td>

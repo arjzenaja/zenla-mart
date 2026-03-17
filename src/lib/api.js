@@ -1,9 +1,4 @@
-/**
- * API Utility Functions
- * Handles all API calls to the backend server
- */
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api').replace(/\/+$/, '');
 
 /**
  * Generic fetch wrapper with error handling
@@ -266,11 +261,9 @@ export const slidesAPI = {
 export const homeSlidesAPI = {
   getAll: () => fetchAPI('/home-slides'),
 };
-
 // Upload API
 export const uploadAPI = {
   uploadImage: async (file) => {
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
     const formData = new FormData();
     formData.append('image', file);
 

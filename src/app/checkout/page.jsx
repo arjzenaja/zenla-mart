@@ -26,9 +26,9 @@ const Page = () => {
   const [cartItems, setCartItems] = useState([]);
   const [addresses, setAddresses] = useState([]);
   const [selectedAddressId, setSelectedAddressId] = useState('');
-  const [paymentMethod, setPaymentMethod] = useState('cash');
+  const [paymentMethod, setPaymentMethod] = useState('cod');
   const [selectedEwallet, setSelectedEwallet] = useState('');
-  const [shippingMethod, setShippingMethod] = useState('regular');
+  const [shippingMethod, setShippingMethod] = useState('dikirim');
   const [notes, setNotes] = useState('');
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -120,9 +120,9 @@ const Page = () => {
       }
 
       // Default shipping info
-      setShippingMethod('regular');
-      setShippingEstimate('2–4 hari kerja');
-      setShippingCost(5000);
+      setShippingMethod('dikirim');
+      setShippingEstimate('');
+      setShippingCost(0);
     } catch (error) {
       console.error('Error fetching data:', error);
       setError(error.message || 'Failed to load checkout data. Please try again.');
@@ -154,40 +154,22 @@ const Page = () => {
 
   const SHIPPING_OPTIONS = [
     {
-      id: 'instant',
-      label: 'Instant',
-      description: 'Tiba dalam 1–2 jam setelah pesanan dikonfirmasi',
-      eta: '1–2 jam',
-      baseCost: 8000
-    },
-    {
-      id: 'same_day',
-      label: 'Same Day',
-      description: 'Sampai di hari yang sama jika pesan sebelum jam 15.00',
-      eta: 'Dalam hari yang sama',
-      baseCost: 6000
-    },
-    {
-      id: 'regular',
-      label: 'Regular',
-      description: 'Pilihan ekonomis dengan estimasi 2–4 hari kerja',
-      eta: '2–4 hari kerja',
-      baseCost: 5000
+      id: 'dikirim',
+      label: 'Dikirim',
+      baseCost: 0
     },
     {
       id: 'pickup',
       label: 'Ambil di Toko',
-      description: 'Ambil langsung pesananmu di toko tanpa biaya ongkir',
-      eta: 'Bisa diambil dalam 1x24 jam setelah pesanan dikonfirmasi',
       baseCost: 0
     }
   ];
 
-  const selectedShippingOption = SHIPPING_OPTIONS.find(opt => opt.id === shippingMethod) || SHIPPING_OPTIONS[2];
+  const selectedShippingOption = SHIPPING_OPTIONS.find(opt => opt.id === shippingMethod) || SHIPPING_OPTIONS[0];
   const effectiveShippingCost = shippingCost ?? selectedShippingOption.baseCost;
 
   const isPickup = shippingMethod === 'pickup';
-  const requiresPaymentProof = !isPickup && (paymentMethod === 'bank' || paymentMethod === 'e-wallet');
+  const requiresPaymentProof = !isPickup && (paymentMethod === 'bank_transfer' || paymentMethod === 'e_wallet');
 
   // E-Wallet options configuration
   const E_WALLET_OPTIONS = [
@@ -267,7 +249,7 @@ const Page = () => {
     // Validasi pembayaran hanya jika BUKAN ambil di toko
     if (!isPickup) {
       // Validasi E-Wallet harus dipilih
-      if (paymentMethod === 'e-wallet' && !selectedEwallet) {
+      if (paymentMethod === 'e_wallet' && !selectedEwallet) {
         showWarning('Silakan pilih e-wallet terlebih dahulu.');
         return;
       }
@@ -330,7 +312,7 @@ const Page = () => {
     (
       isPickup ||
       (
-        (paymentMethod !== 'e-wallet' || !!selectedEwallet) &&
+        (paymentMethod !== 'e_wallet' || !!selectedEwallet) &&
         (!requiresPaymentProof || !!paymentProofUrl)
       )
     );
@@ -340,7 +322,7 @@ const Page = () => {
     if (!selectedAddressId) return 1;
     if (!shippingMethod) return 2;
     // Jika ambil di toko, lewati validasi step pembayaran
-    if (!isPickup && (!paymentMethod || (paymentMethod === 'e-wallet' && !selectedEwallet))) return 3;
+    if (!isPickup && (!paymentMethod || (paymentMethod === 'e_wallet' && !selectedEwallet))) return 3;
     if (!confirmChecked) return 4;
     return 4;
   };
@@ -574,19 +556,8 @@ const Page = () => {
                       onChange={(e) => {
                         const value = e.target.value;
                         setShippingMethod(value);
-                        const option = SHIPPING_OPTIONS.find(opt => opt.id === value);
-                        if (option) {
-                          setShippingEstimate(option.eta);
-                          // Gratis ongkir untuk Regular jika subtotal di atas 200k, atau untuk semua metode jika subtotal di atas 300k
-                          if (option.id === 'pickup') {
-                            // Ambil di toko selalu tanpa ongkir
-                            setShippingCost(0);
-                          } else if (subtotal >= 300000 || (value === 'regular' && subtotal >= 200000)) {
-                            setShippingCost(0);
-                          } else {
-                            setShippingCost(option.baseCost);
-                          }
-                        }
+                        setShippingCost(0);
+                        setShippingEstimate('');
                       }}
                       className="space-y-4"
                     >
@@ -605,8 +576,8 @@ const Page = () => {
                                 : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-md'
                             }`}
                           >
-                            <div className="flex items-start gap-4 p-5 lg:p-6">
-                              <div className="flex-shrink-0 pt-1">
+                            <div className="flex items-center gap-4 p-5 lg:p-6">
+                              <div className="flex-shrink-0">
                                 <Radio 
                                   value={option.id}
                                   sx={{
@@ -618,36 +589,17 @@ const Page = () => {
                                 />
                               </div>
                               
-                              <div className="flex-1 min-w-0">
-                                <div className="flex items-start justify-between gap-4 mb-2">
-                                  <div className="flex-1">
-                                    <div className="flex items-center gap-3 mb-1">
-                                      <FiTruck className={`w-5 h-5 ${isSelected ? 'text-[#D96F32]' : 'text-gray-400'}`} />
-                                      <p className="text-base font-bold text-gray-900">
-                                        {option.label}
-                                      </p>
-                                    </div>
-                                    <p className="text-sm text-gray-600 mb-2">
-                                      {option.description}
-                                    </p>
-                                    <p className="text-xs text-gray-500">
-                                      Estimasi tiba: <span className="font-semibold text-gray-700">{option.eta}</span>
-                                    </p>
-                                  </div>
-                                  <div className="text-right flex-shrink-0">
-                                    <p className={`text-lg font-bold ${costToShow === 0 ? 'text-emerald-600' : 'text-gray-900'}`}>
-                                      {isPickupOption
-                                        ? 'Gratis'
-                                        : (costToShow === 0 ? 'Gratis' : formatCurrency(costToShow))}
-                                    </p>
-                                    {!isPickupOption && costToShow === 0 && (
-                                      <p className="text-xs text-emerald-600 mt-1 font-medium">
-                                        {option.id === 'regular' 
-                                          ? 'Pesanan ≥ Rp200k'
-                                          : 'Pesanan ≥ Rp300k'}
-                                      </p>
-                                    )}
-                                  </div>
+                              <div className="flex-1 flex items-center justify-between">
+                                <div className="flex items-center gap-3">
+                                  <FiTruck className={`w-5 h-5 ${isSelected ? 'text-[#D96F32]' : 'text-gray-400'}`} />
+                                  <p className="text-base font-bold text-gray-900">
+                                    {option.label}
+                                  </p>
+                                </div>
+                                <div className="text-right flex-shrink-0">
+                                  <p className="text-lg font-bold text-emerald-600">
+                                    Gratis
+                                  </p>
                                 </div>
                               </div>
                             </div>
@@ -690,7 +642,7 @@ const Page = () => {
                       {/* COD Payment Method Card */}
                       <label
                         className={`group relative block border-2 rounded-xl cursor-pointer transition-all duration-200 ${
-                          paymentMethod === 'cash'
+                          paymentMethod === 'cod'
                             ? 'border-[#D96F32] bg-orange-50/50 shadow-lg shadow-orange-100 scale-[1.02]'
                             : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-md'
                         } ${!isCODAvailable ? 'opacity-50 cursor-not-allowed' : ''}`}
@@ -698,7 +650,7 @@ const Page = () => {
                         <div className="flex items-start gap-4 p-5 lg:p-6">
                           <div className="flex-shrink-0 pt-1">
                             <Radio 
-                              value="cash" 
+                              value="cod" 
                               disabled={!isCODAvailable}
                               sx={{
                                 color: '#D96F32',
@@ -713,9 +665,9 @@ const Page = () => {
                           </div>
                           <div className="flex items-start gap-4 flex-1">
                             <div className={`w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors ${
-                              paymentMethod === 'cash' ? 'bg-orange-100' : 'bg-gray-100'
+                              paymentMethod === 'cod' ? 'bg-orange-100' : 'bg-gray-100'
                             }`}>
-                              <svg className={`w-7 h-7 ${paymentMethod === 'cash' ? 'text-[#D96F32]' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className={`w-7 h-7 ${paymentMethod === 'cod' ? 'text-[#D96F32]' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
                               </svg>
                             </div>
@@ -734,7 +686,7 @@ const Page = () => {
                             </div>
                           </div>
                         </div>
-                        {paymentMethod === 'cash' && (
+                        {paymentMethod === 'cod' && (
                           <div className="absolute top-4 right-4">
                             <div className="w-6 h-6 rounded-full bg-[#D96F32] flex items-center justify-center">
                               <FiCheck className="w-4 h-4 text-white" />
@@ -743,10 +695,9 @@ const Page = () => {
                         )}
                       </label>
 
-                      {/* Bank Transfer Payment Method Card */}
                       <label
                         className={`group relative block border-2 rounded-xl cursor-pointer transition-all duration-200 ${
-                          paymentMethod === 'bank'
+                          paymentMethod === 'bank_transfer'
                             ? 'border-[#D96F32] bg-orange-50/50 shadow-lg shadow-orange-100 scale-[1.02]'
                             : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-md'
                         }`}
@@ -754,7 +705,7 @@ const Page = () => {
                         <div className="flex items-start gap-4 p-5 lg:p-6">
                           <div className="flex-shrink-0 pt-1">
                             <Radio 
-                              value="bank"
+                              value="bank_transfer"
                               sx={{
                                 color: '#D96F32',
                                 '&.Mui-checked': {
@@ -765,9 +716,9 @@ const Page = () => {
                           </div>
                           <div className="flex items-start gap-4 flex-1">
                             <div className={`w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors ${
-                              paymentMethod === 'bank' ? 'bg-blue-100' : 'bg-gray-100'
+                              paymentMethod === 'bank_transfer' ? 'bg-blue-100' : 'bg-gray-100'
                             }`}>
-                              <svg className={`w-7 h-7 ${paymentMethod === 'bank' ? 'text-blue-600' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className={`w-7 h-7 ${paymentMethod === 'bank_transfer' ? 'text-blue-600' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
                               </svg>
                             </div>
@@ -781,7 +732,7 @@ const Page = () => {
                             </div>
                           </div>
                         </div>
-                        {paymentMethod === 'bank' && (
+                        {paymentMethod === 'bank_transfer' && (
                           <div className="absolute top-4 right-4">
                             <div className="w-6 h-6 rounded-full bg-[#D96F32] flex items-center justify-center">
                               <FiCheck className="w-4 h-4 text-white" />
@@ -790,42 +741,12 @@ const Page = () => {
                         )}
                       </label>
 
-                  {/* Bank Details Info - muncul hanya saat Transfer Bank dipilih */}
-                  {paymentMethod === 'bank' && (
-                    <div className="mt-3 ml-12 animate-fadeIn">
-                      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                        <div className="flex items-start gap-3">
-                          <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
-                            <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                          </div>
-                          <div className="flex-1">
-                            <p className="text-sm font-semibold text-gray-800 mb-2">Informasi Rekening</p>
-                            <div className="space-y-1 text-sm text-gray-700">
-                              <div className="flex items-center gap-2">
-                                <span className="font-medium min-w-[100px]">Bank:</span>
-                                <span>{BANK_DETAILS.name}</span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <span className="font-medium min-w-[100px]">No Rekening:</span>
-                                <span className="font-mono font-semibold">{BANK_DETAILS.accountNumber}</span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <span className="font-medium min-w-[100px]">Atas Nama:</span>
-                                <span>{BANK_DETAILS.accountName}</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  )}
+
 
                       {/* E-Wallet Payment Method Card */}
                       <label
                         className={`group relative block border-2 rounded-xl cursor-pointer transition-all duration-200 ${
-                          paymentMethod === 'e-wallet'
+                          paymentMethod === 'e_wallet'
                             ? 'border-[#D96F32] bg-orange-50/50 shadow-lg shadow-orange-100 scale-[1.02]'
                             : 'border-gray-200 bg-white hover:border-gray-300 hover:shadow-md'
                         }`}
@@ -833,7 +754,7 @@ const Page = () => {
                         <div className="flex items-start gap-4 p-5 lg:p-6">
                           <div className="flex-shrink-0 pt-1">
                             <Radio 
-                              value="e-wallet"
+                              value="e_wallet"
                               sx={{
                                 color: '#D96F32',
                                 '&.Mui-checked': {
@@ -844,9 +765,9 @@ const Page = () => {
                           </div>
                           <div className="flex items-start gap-4 flex-1">
                             <div className={`w-14 h-14 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors ${
-                              paymentMethod === 'e-wallet' ? 'bg-purple-100' : 'bg-gray-100'
+                              paymentMethod === 'e_wallet' ? 'bg-purple-100' : 'bg-gray-100'
                             }`}>
-                              <svg className={`w-7 h-7 ${paymentMethod === 'e-wallet' ? 'text-purple-600' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <svg className={`w-7 h-7 ${paymentMethod === 'e_wallet' ? 'text-purple-600' : 'text-gray-400'}`} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
                               </svg>
                             </div>
@@ -860,7 +781,7 @@ const Page = () => {
                             </div>
                           </div>
                         </div>
-                        {paymentMethod === 'e-wallet' && (
+                        {paymentMethod === 'e_wallet' && (
                           <div className="absolute top-4 right-4">
                             <div className="w-6 h-6 rounded-full bg-[#D96F32] flex items-center justify-center">
                               <FiCheck className="w-4 h-4 text-white" />
@@ -871,8 +792,8 @@ const Page = () => {
                     </RadioGroup>
 
                     {/* E-Wallet Dropdown - muncul hanya saat E-Wallet dipilih */}
-                    {paymentMethod === 'e-wallet' && (
-                      <div className="mt-4 ml-2 animate-fade-in bg-gray-50 rounded-xl p-5 border border-gray-200">
+                    {paymentMethod === 'e_wallet' && (
+                      <div className="mt-4 ml-2 animate-fade-in bg-gray-50 rounded-xl p-5 border border-gray-200 transition-all duration-300">
                         <label className="block text-sm font-bold text-gray-900 mb-3">
                           Pilih E-Wallet <span className="text-red-500">*</span>
                         </label>
@@ -895,8 +816,8 @@ const Page = () => {
                     )}
 
                     {/* Bank Details Info - muncul hanya saat Transfer Bank dipilih */}
-                    {paymentMethod === 'bank' && (
-                      <div className="mt-4 ml-2 animate-fade-in bg-blue-50 rounded-xl p-5 border border-blue-200">
+                    {paymentMethod === 'bank_transfer' && (
+                      <div className="mt-4 ml-2 animate-fade-in bg-blue-50 rounded-xl p-5 border border-blue-200 transition-all duration-300">
                         <div className="flex items-start gap-3">
                           <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
                             <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
