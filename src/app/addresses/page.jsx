@@ -4,6 +4,7 @@ import { Button, Dialog, DialogTitle, DialogContent, DialogContentText, DialogAc
 import { usersAPI } from "@/lib/api";
 import { FiMapPin, FiPhone, FiUser, FiHome, FiBriefcase, FiTag, FiSearch, FiMail } from "react-icons/fi";
 import Toast from "@/component/Toast";
+import Breadcrumbs from "@/app/components/Breadcrumbs";
 
 const AddressesPage = () => {
   const [users, setUsers] = useState([]);
@@ -160,47 +161,47 @@ const AddressesPage = () => {
     }}>
       <div className="p-8 max-w-7xl mx-auto">
         <div className="mb-8 animate-fadeIn">
-          <h1 className="text-4xl font-extrabold gradient-text mb-2">User Addresses</h1>
+          <Breadcrumbs items={[{ label: "Addresses" }]} />
+          <h1 className="text-4xl font-extrabold gradient-text mb-2 leading-tight mt-1">User Addresses</h1>
           <p className="text-gray-600 text-lg">View and manage addresses for all users</p>
         </div>
 
         {/* User Selection */}
-        <div className="card-premium p-6 mb-8 animate-scaleIn">
-          <div className="mb-4">
-            <label className="block text-sm font-bold text-gray-700 mb-2">
+        <div className="card-premium p-8 mb-10 animate-scaleIn">
+          <div className="mb-6">
+            <label className="block text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3 px-1">
               Filter by User
             </label>
-            <div className="flex flex-col md:flex-row gap-4">
-              <div className="flex-1 relative">
-                <FiSearch className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400" size={20} />
+            <div className="flex flex-col md:flex-row gap-5">
+              <div className="flex-1 relative group">
+                <FiSearch className="absolute left-5 top-1/2 transform -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors" size={20} />
                 <input
                   type="text"
                   placeholder="Search by name, email, or phone..."
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full h-[55px] pl-12 pr-4 rounded-xl border border-gray-200 bg-gray-50 focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/10 transition-smooth outline-none text-gray-700"
+                  className="w-full h-[60px] pl-14 pr-6 rounded-[2rem] border border-gray-100 bg-gray-50/50 focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all outline-none text-gray-700 font-bold placeholder:font-medium text-sm"
                 />
               </div>
-              <FormControl size="small" className="!min-w-[300px]">
+              <FormControl size="small" className="!min-w-[320px]">
                 <Select
                   value={selectedUserId}
                   onChange={(e) => setSelectedUserId(e.target.value)}
                   displayEmpty
-                  className="!h-[55px] !rounded-xl !bg-gray-50 !border-gray-200 focus:!border-primary !text-gray-700"
+                  className="!h-[60px] !rounded-[2rem] !bg-gray-50/50 !border-gray-100 focus:!border-primary !text-gray-900 !font-black !uppercase !tracking-widest !text-[11px]"
                   sx={{
-                    '& fieldset': { border: '1px solid #e5e7eb !important' },
-                    '&:hover fieldset': { border: '1px solid #d1d5db !important' },
-                    '&.Mui-focused fieldset': { border: '1px solid #D96F32 !important' },
+                    '& fieldset': { border: 'none' },
+                    '& .MuiSelect-select': { pl: 3 }
                   }}
                 >
-                  <MenuItem value="all">
-                    <em>All Users</em>
+                  <MenuItem value="all" className="!text-[11px] !font-black !uppercase !tracking-widest">
+                    <em>All Customers</em>
                   </MenuItem>
                   {filteredUsers.map((user) => (
-                    <MenuItem key={user.id} value={user.id}>
-                      <div className="flex flex-col">
-                         <span className="font-semibold">{user.name}</span>
-                         <span className="text-xs text-gray-500">{user.email}</span>
+                    <MenuItem key={user.id} value={user.id} className="!text-[11px] !font-black !uppercase !tracking-widest">
+                      <div className="flex flex-col py-1">
+                         <span className="font-black text-gray-900">{user.name}</span>
+                         <span className="text-[10px] text-gray-400 font-bold">{user.email}</span>
                       </div>
                     </MenuItem>
                   ))}
@@ -212,40 +213,43 @@ const AddressesPage = () => {
 
         {/* Addresses List */}
         {selectedUserId && (
-          <div className="card-premium p-6 animate-fadeIn" style={{ animationDelay: '100ms' }}>
-            <div className="mb-6 flex items-center justify-between border-b border-gray-100 pb-4">
+          <div className="animate-fadeIn" style={{ animationDelay: '100ms' }}>
+            <div className="mb-10 flex flex-col md:flex-row md:items-center justify-between gap-6 px-1">
               <div>
-                <h2 className="text-xl font-bold text-gray-800 mb-1">
+                <h2 className="text-3xl font-black text-gray-900 tracking-tight">
                   {selectedUserId === "all" 
-                    ? "All User Addresses" 
-                    : `Addresses for ${selectedUser?.name || "User"}`}
+                    ? "Global Address Directory" 
+                    : `Verified Addresses`}
                 </h2>
-                <p className="text-sm text-gray-500 font-medium">
-                  {selectedUserId === "all" 
-                    ? `${addresses.length} ${addresses.length === 1 ? "address" : "addresses"} from ${users.length} users`
-                    : `${selectedUser?.email} • ${addresses.length} ${addresses.length === 1 ? "address" : "addresses"}`}
-                </p>
+                <div className="flex items-center gap-2 mt-2">
+                   <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse"></div>
+                   <p className="text-sm text-gray-500 font-bold uppercase tracking-widest">
+                    {selectedUserId === "all" 
+                      ? `${addresses.length} entries registered across platform`
+                      : `${selectedUser?.name} • ${addresses.length} ${addresses.length === 1 ? "address" : "addresses"}`}
+                  </p>
+                </div>
               </div>
-              <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center text-primary">
-                <FiMapPin size={24} />
+              <div className="w-14 h-14 bg-white shadow-premium rounded-2xl flex items-center justify-center text-primary border border-gray-50">
+                <FiMapPin size={28} />
               </div>
             </div>
 
             {loading ? (
-              <div className="flex items-center justify-center py-16">
-                 <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-                <span className="ml-4 text-gray-500 font-medium">Loading addresses...</span>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                 <div className="skeleton h-[320px] rounded-[2rem]"></div>
+                 <div className="skeleton h-[320px] rounded-[2rem]"></div>
               </div>
             ) : addresses.length === 0 ? (
-              <div className="text-center py-16">
-                <div className="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mx-auto mb-4">
+              <div className="card-premium py-32 flex flex-col items-center justify-center text-center">
+                <div className="w-24 h-24 bg-gray-50 rounded-[2.5rem] flex items-center justify-center mb-8 shadow-inner border border-gray-100">
                   <FiMapPin size={40} className="text-gray-300" />
                 </div>
-                <h3 className="text-lg font-bold text-gray-700 mb-1">No addresses found</h3>
-                <p className="text-gray-500">There are no addresses to display for this selection.</p>
+                <h3 className="text-2xl font-black text-gray-900 mb-2">No Records Found</h3>
+                <p className="text-gray-500 font-medium max-w-xs">We couldn't find any addresses matching your current selection.</p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-2 gap-8 pb-20">
                 {addresses.map((address) => (
                   <div
                     key={address.id}

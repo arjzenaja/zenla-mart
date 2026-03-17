@@ -1,224 +1,197 @@
 'use client'
 import React, { useState } from "react";
 import { RxDashboard } from "react-icons/rx";
-import { LiaImageSolid } from "react-icons/lia";
-import { TbUser, TbUsers } from "react-icons/tb";
+import { LiaImageSolid, LiaAngleDownSolid } from "react-icons/lia";
+import { TbUsers } from "react-icons/tb";
 import { MdOutlineCategory } from "react-icons/md";
 import { TbBrandProducthunt } from "react-icons/tb";
 import { IoBagCheckOutline } from "react-icons/io5";
 import { PiImagesSquare } from "react-icons/pi";
 import { IoIosLogOut } from "react-icons/io";
-import { FiMapPin, FiUser, FiX } from "react-icons/fi";
+import { FiMapPin, FiUser } from "react-icons/fi";
 import { HiOutlineHeart } from "react-icons/hi";
-import { Button, IconButton } from "@mui/material";
-import { LiaAngleDownSolid } from "react-icons/lia";
 import { Collapse } from 'react-collapse';
 import Link from "next/link";
 import { useAuth } from "./AuthProvider";
 import { usePathname } from "next/navigation";
 
-const Sidebar = ({ collapsed, onToggle }) => {
-
+const Sidebar = () => {
   const [isOpenTab, setIsOpenTab] = useState(null);
   const { logout } = useAuth();
   const pathname = usePathname();
 
+  const isActive = (href) => {
+    if (!href) return false;
+    if (href === '/') return pathname === '/';
+    return pathname === href || pathname.startsWith(href + '/');
+  };
+
+  const isParentActive = (children) => {
+    if (!children) return false;
+    return children.some(child => isActive(child.href));
+  };
+
   const sidebarTabs = [
     {
       name: "Dashboard",
-      icon: <RxDashboard size={20} className="transition-smooth"/>,
+      icon: <RxDashboard size={18} />,
       href: "/",
     },
     {
       name: "Home Slides",
-      icon: <LiaImageSolid size={20} className="transition-smooth"/>,
+      icon: <LiaImageSolid size={19} />,
       href: null,
       children: [
-        {
-          name: "Home Slides List",
-          href: "/home-slides",
-        },
-        {
-          name: "Add Home Slide",
-          href: "/home-slides/add-home-slide",
-        },
+        { name: "Home Slides List", href: "/home-slides" },
+        { name: "Add Home Slide", href: "/home-slides/add-home-slide" },
       ],
     },
     {
       name: "Category",
-      icon: <MdOutlineCategory size={20} className="transition-smooth"/>,
+      icon: <MdOutlineCategory size={18} />,
       href: null,
       children: [
-        {
-          name: "Category List",
-          href: "/category-list",
-        },
-        {
-          name: "Add New Category",
-          href: "/category-list/add-category",
-        },
+        { name: "Category List", href: "/category-list" },
+        { name: "Add New Category", href: "/category-list/add-category" },
       ],
     },
     {
       name: "Products",
-      icon: <TbBrandProducthunt size={22} className="transition-smooth"/>,
+      icon: <TbBrandProducthunt size={20} />,
       href: null,
       children: [
-        {
-          name: "Products List",
-          href: "/products-list",
-        },
-        {
-          name: "Add New Products",
-          href: "/products-list/add-product",
-        },
+        { name: "Products List", href: "/products-list" },
+        { name: "Add New Products", href: "/products-list/add-product" },
       ],
     },
     {
       name: "Users",
-      icon: <TbUsers size={20} className="transition-smooth"/>,
+      icon: <TbUsers size={18} />,
       href: "/users",
     },
     {
       name: "Wishlists",
-      icon: <HiOutlineHeart size={20} className="transition-smooth"/>,
+      icon: <HiOutlineHeart size={18} />,
       href: "/wishlists",
     },
     {
       name: "Orders",
-      icon: <IoBagCheckOutline size={20} className="transition-smooth"/>,
+      icon: <IoBagCheckOutline size={18} />,
       href: "/orders",
     },
     {
       name: "Addresses",
-      icon: <FiMapPin size={20} className="transition-smooth"/>,
+      icon: <FiMapPin size={18} />,
       href: "/addresses",
     },
     {
       name: "Banners",
-      icon: <PiImagesSquare size={20} className="transition-smooth"/>,
+      icon: <PiImagesSquare size={18} />,
       href: null,
       children: [
-        {
-          name: "Banners List",
-          href: "/banners",
-        },
-        {
-          name: "Add New Banners",
-          href: "/banners/add-banner",
-        },
+        { name: "Banners List", href: "/banners" },
+        { name: "Add New Banners", href: "/banners/add-banner" },
       ],
     },
     {
       name: "Profile",
-      icon: <FiUser size={20} className="transition-smooth"/>,
+      icon: <FiUser size={18} />,
       href: "/profile",
     },
   ];
 
-  const isActive = (href) => pathname === href;
-
   return (
-    <aside className={`h-screen overflow-y-auto bg-white border-r-2 border-gray-100 sticky top-0 z-40 scroll-smooth shadow-lg animate-slideIn transition-all duration-300 ${
-      collapsed ? 'w-[80px] px-2' : 'w-full px-3'
-    }`} style={{
-      background: 'linear-gradient(180deg, #ffffff 0%, #fafafa 100%)'
-    }}>
-      <div className={`flex items-center justify-between border-b-2 border-gray-100 mb-3 ${collapsed ? 'p-4' : 'p-6'}`}>
-        <Link href={"/"} className="flex items-center group overflow-hidden">
-          <img 
-            src="/logo.png" 
-            alt="logo" 
-            className={`transition-smooth group-hover:scale-105 ${collapsed ? 'w-8 h-8 object-contain' : 'w-[140px] lg:w-[160px] h-auto'}`} 
-          />
+    <aside className="w-full h-screen overflow-y-auto bg-white border-r border-gray-100 px-3 sticky top-0 z-40 scroll-hidden">
+      {/* Logo */}
+      <div className="p-5 mb-1 border-b border-gray-100">
+        <Link href={"/"} className="flex items-center">
+          <img src="/logo.png" alt="logo" className="w-[155px] h-auto" />
         </Link>
-        {!collapsed && (
-          <IconButton onClick={onToggle} className="lg:hidden !text-gray-400">
-            <FiX size={20} />
-          </IconButton>
-        )}
       </div>
 
-      <nav className="space-y-2 pb-24 px-2">
-        {sidebarTabs &&
-          sidebarTabs?.map((item, index) => {
-            const active = isActive(item?.href);
-            return (
-              <div key={index} className="animate-fadeIn" style={{ animationDelay: `${index * 50}ms` }}>
-                {item?.href !== null ? (
-                  <Link href={item?.href}>
-                    <Button className={`w-full! text-left! justify-start! capitalize! text-[14px]! font-semibold px-4! py-3! gap-3 group transition-smooth !rounded-xl ${
-                      active 
-                        ? '!bg-gradient-to-r !from-orange-50 !to-orange-100 !text-primary shadow-sm' 
-                        : '!text-gray-700 hover:!bg-gradient-to-r hover:!from-orange-50 hover:!to-orange-100'
+      {/* Label */}
+      <div className="px-4 pt-4 pb-1">
+        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Menu</span>
+      </div>
+
+      <nav className="space-y-0.5 pb-24 pt-1">
+        {sidebarTabs?.map((item, index) => {
+          const active = item.href ? isActive(item.href) : isParentActive(item.children);
+          return (
+            <div key={index}>
+              {item?.href !== null ? (
+                <Link href={item?.href}>
+                  <div className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200 cursor-pointer select-none
+                    ${active
+                      ? 'bg-orange-50 text-primary border border-orange-200/60 shadow-sm'
+                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 border border-transparent'
                     }`}>
-                      <span className={`transition-smooth flex-shrink-0 ${active ? 'text-primary scale-110' : 'text-gray-600 group-hover:text-primary group-hover:scale-110'}`}>
-                        {item?.icon}
-                      </span>
-                      {!collapsed && <span className="flex-1 truncate">{item?.name}</span>}
-                      {active && !collapsed && (
-                        <span className="w-2 h-2 rounded-full bg-primary animate-pulse"></span>
-                      )}
-                    </Button>
-                  </Link>
-                ) : (
-                  <Button 
-                    className={`w-full! text-left! justify-start! capitalize! text-[14px]! font-semibold px-4! py-3! gap-3 group transition-smooth !rounded-xl ${
-                      isOpenTab === index 
-                        ? '!bg-gradient-to-r !from-orange-50 !to-orange-100 !text-primary' 
-                        : '!text-gray-700 hover:!bg-gradient-to-r hover:!from-orange-50 hover:!to-orange-100'
-                    }`}
-                    onClick={()=>setIsOpenTab(isOpenTab === index ? null : index)}
-                  >
-                    <span className={`transition-smooth flex-shrink-0 ${isOpenTab === index ? 'text-primary scale-110' : 'text-gray-600 group-hover:text-primary group-hover:scale-110'}`}>
+                    <span className={`flex-shrink-0 transition-colors duration-200 ${active ? 'text-primary' : 'text-gray-400'}`}>
                       {item?.icon}
                     </span>
-                    {!collapsed && <span className="flex-1 truncate">{item?.name}</span>}
-                    {item?.children && !collapsed && (
-                      <LiaAngleDownSolid 
-                        size={16} 
-                        className={`transition-smooth ${isOpenTab === index ? 'rotate-180 text-primary' : 'text-gray-400'}`} 
-                      />
+                    <span className={`flex-1 ${active ? 'font-semibold' : ''}`}>{item?.name}</span>
+                    {active && (
+                      <span className="w-1.5 h-1.5 rounded-full bg-primary flex-shrink-0 animate-pulse"></span>
                     )}
-                  </Button>
-                )}
+                  </div>
+                </Link>
+              ) : (
+                <div
+                  className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200 cursor-pointer select-none
+                    ${active
+                      ? 'bg-orange-50 text-primary border border-orange-200/60 shadow-sm'
+                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 border border-transparent'
+                    }`}
+                  onClick={() => setIsOpenTab(isOpenTab === index ? null : index)}
+                >
+                  <span className={`flex-shrink-0 transition-colors duration-200 ${active ? 'text-primary' : 'text-gray-400'}`}>
+                    {item?.icon}
+                  </span>
+                  <span className={`flex-1 ${active ? 'font-semibold' : ''}`}>{item?.name}</span>
+                  {item?.children && (
+                    <LiaAngleDownSolid
+                      size={14}
+                      className={`flex-shrink-0 text-gray-400 transition-transform duration-300 ${isOpenTab === index ? 'rotate-180' : ''}`}
+                    />
+                  )}
+                </div>
+              )}
 
-                {item?.children && (
-                  <Collapse isOpened={isOpenTab === index ? true : false}>
-                    <div className="dropdown w-full flex flex-col gap-1 pl-12 pr-2 py-3 mt-1 rounded-xl mx-1 transition-smooth" style={{
-                      background: 'linear-gradient(135deg, #fef3e7 0%, #fde8d0 100%)'
-                    }}>
-                      {item?.children?.map((tab, index_) => {
-                        const childActive = isActive(tab?.href);
-                        return (
-                          <Link
-                            href={tab?.href}
-                            key={index_}
-                            className={`text-[13px] py-2.5 px-4 rounded-lg transition-smooth block font-medium ${
-                              childActive
-                                ? 'bg-white text-primary shadow-sm font-bold'
-                                : 'text-gray-600 hover:text-primary hover:bg-white hover:shadow-sm'
+              {item?.children && (
+                <Collapse isOpened={isOpenTab === index}>
+                  <div className="flex flex-col gap-0.5 pl-3 pr-1 py-1">
+                    {item?.children?.map((tab, index_) => {
+                      const childActive = isActive(tab.href);
+                      return (
+                        <Link
+                          href={tab?.href}
+                          key={index_}
+                          className={`text-[12.5px] py-2 px-3 rounded-lg transition-all duration-200 flex items-center gap-2.5
+                            ${childActive
+                              ? 'text-primary font-semibold bg-orange-50/80'
+                              : 'text-gray-500 hover:text-gray-800 hover:bg-gray-50'
                             }`}
-                          >
-                            <span className="mr-2">•</span>{tab?.name}
-                          </Link>
-                        );
-                      })}
-                    </div>
-                  </Collapse>
-                )}
-              </div>
-            );
-          })}
-        
-        <div className="pt-4 border-t-2 border-gray-200 mt-6">
-          <Button 
+                        >
+                          <span className={`w-1 h-1 rounded-full flex-shrink-0 ${childActive ? 'bg-primary' : 'bg-gray-300'}`}></span>
+                          {tab?.name}
+                        </Link>
+                      );
+                    })}
+                  </div>
+                </Collapse>
+              )}
+            </div>
+          );
+        })}
+
+        <div className="pt-3 border-t border-gray-100 mt-3">
+          <div
             onClick={logout}
-            className={`w-full! text-left! justify-start! capitalize! text-red-600! text-[14px]! font-semibold hover:!bg-red-50! px-4! py-3! gap-3 transition-smooth !rounded-xl group ${collapsed ? 'justify-center!' : ''}`}
+            className="w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium text-red-500 hover:bg-red-50 hover:text-red-600 border border-transparent transition-all duration-200 cursor-pointer select-none"
           >
-            <IoIosLogOut size={20} className="transition-smooth group-hover:scale-110 flex-shrink-0" />
-            {!collapsed && <span className="flex-1">Logout</span>}
-          </Button>
+            <IoIosLogOut size={18} className="flex-shrink-0" />
+            <span>Logout</span>
+          </div>
         </div>
       </nav>
     </aside>

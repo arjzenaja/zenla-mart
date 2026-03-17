@@ -5,6 +5,7 @@ import React, { useState } from "react";
 import { IoMdClose } from "react-icons/io";
 import { useRouter } from "next/navigation";
 import { uploadAPI, slidesAPI } from "@/lib/api";
+import Breadcrumbs from "@/app/components/Breadcrumbs";
 
 const AddSlide = () => {
   const router = useRouter();
@@ -85,7 +86,11 @@ const AddSlide = () => {
       <div className="p-8 max-w-5xl mx-auto">
         <div className="flex items-center justify-between mb-8 animate-fadeIn">
           <div>
-            <h1 className="text-3xl font-extrabold gradient-text mb-2">Add Home Slide</h1>
+            <Breadcrumbs items={[
+              { label: "Home Slides", href: "/home-slides" },
+              { label: "Add Home Slide" }
+            ]} />
+            <h1 className="text-3xl font-extrabold gradient-text mb-2 leading-tight mt-1">Add Home Slide</h1>
             <p className="text-gray-600 text-lg">Create a new slide for the homepage carousel</p>
           </div>
           <button

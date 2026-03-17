@@ -5,36 +5,29 @@ import SalesAndUsersCharts from "./components/SalesAndUserCharts";
 
 export default function Home() {
   return (
-    <main className="flex-1 min-h-screen" style={{
-      background: 'linear-gradient(135deg, #f5f7fa 0%, #e9ecef 100%)'
-    }}>
-      <div className="p-8 max-w-7xl mx-auto">
-        {/* Header Section */}
-        <div className="mb-8 animate-fadeIn">
-          <h1 className="text-4xl font-extrabold gradient-text mb-2">Dashboard</h1>
-          <p className="text-gray-600 text-lg">Welcome to Zenla Admin Panel</p>
+    <main className="flex-1 bg-gray-50 min-h-screen animate-fadeIn">
+      <div className="p-6 md:p-8 max-w-7xl mx-auto">
+        {/* Page Header */}
+        <div className="mb-8 space-y-1">
+          <h1 className="text-3xl font-black text-gray-900 tracking-tight font-outfit">Dashboard</h1>
+          <p className="text-sm text-gray-400 font-medium uppercase tracking-[0.15em]">Main Overview</p>
         </div>
 
-        {/* Dashboard Stats */}
-        <div className="mb-8 animate-scaleIn">
+        {/* Stat Boxes */}
+        <div className="mb-8">
           <DashboardBoxes />
         </div>
 
-        {/* Content Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Left Column - Main Content */}
-          <div className="lg:col-span-2 space-y-8">
-            <div className="card-premium p-6 animate-fadeIn" style={{ animationDelay: '100ms' }}>
-              <ProductsComponent />
-            </div>
-
-            <div className="card-premium p-6 animate-fadeIn" style={{ animationDelay: '200ms' }}>
-              <SalesAndUsersCharts />
-            </div>
+        {/* Main Content Grid */}
+        <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+          {/* Left Column - Products + Chart */}
+          <div className="xl:col-span-2 space-y-6">
+            <ProductsComponent />
+            <SalesAndUsersCharts />
           </div>
 
-          {/* Right Column - Secondary Content */}
-          <div className="card-premium p-6 animate-fadeIn" style={{ animationDelay: '300ms' }}>
+          {/* Right Column - Users */}
+          <div className="xl:col-span-1">
             <UsersComponent />
           </div>
         </div>

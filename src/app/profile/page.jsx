@@ -6,6 +6,8 @@ import { useAuth } from '../components/AuthProvider';
 import { usersAPI } from '@/lib/api';
 import { validateIndonesianPhone, formatPhoneForDisplay } from '@/utils/phoneValidation';
 import Toast from '@/component/Toast';
+import Breadcrumbs from "@/app/components/Breadcrumbs";
+import { FiUser, FiSettings, FiMail, FiPhone } from "react-icons/fi";
 
 export default function ProfilePage() {
   const { user: authUser, setUser } = useAuth();
@@ -257,167 +259,167 @@ export default function ProfilePage() {
         onClose={() => setToast({ ...toast, open: false })}
       />
       
-      <div className="p-8 max-w-4xl mx-auto animate-fadeIn">
-        <div className="card-premium p-8">
-          {/* Header */}
-          <div className="mb-8 border-b border-gray-100 pb-6">
-            <h1 className="text-3xl font-extrabold gradient-text mb-2">My Profile</h1>
-            <p className="text-gray-500 font-medium">Manage your account information and settings</p>
+      <div className="p-8 max-w-5xl mx-auto">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-10 animate-fadeIn">
+          <div>
+            <Breadcrumbs items={[{ label: "Profile" }]} />
+            <h1 className="text-4xl font-extrabold gradient-text tracking-tight leading-tight mt-1">Admin Profile</h1>
+            <p className="text-gray-500 mt-2 font-medium uppercase tracking-widest text-[11px] font-black">Manage your personal database identity</p>
+          </div>
+          <div className="flex items-center gap-3 bg-white/50 backdrop-blur-md px-5 py-2.5 rounded-2xl shadow-sm border border-gray-100">
+             <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+             <span className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Active Session</span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Left Side: Identity Card */}
+          <div className="lg:col-span-1 space-y-8 animate-scaleIn">
+            <div className="card-premium p-8 text-center relative overflow-hidden group shadow-premium border-gray-100/50">
+              <div className="absolute -top-10 -right-10 w-32 h-32 bg-primary/5 rounded-full blur-3xl group-hover:bg-primary/10 transition-colors duration-500"></div>
+              
+              <div className="relative z-10">
+                <div className="w-24 h-24 rounded-[2rem] bg-orange-50 flex items-center justify-center text-primary mx-auto mb-6 shadow-sm border border-orange-100 group-hover:scale-110 transition-transform duration-500">
+                  <FiUser size={48} />
+                </div>
+                <h2 className="text-2xl font-black text-gray-900 mb-1">{user.name}</h2>
+                <p className="text-[10px] font-black text-primary uppercase tracking-[0.2em] mb-8 bg-orange-50 py-1.5 rounded-full inline-block px-6">Administrator</p>
+                
+                <div className="space-y-4 pt-8 border-t border-gray-100">
+                   <div className="flex items-center justify-between text-xs font-black text-gray-400 uppercase tracking-widest px-1">
+                      <span>Status</span>
+                      <span className="text-green-500">Verified</span>
+                   </div>
+                   <div className="flex items-center justify-between text-xs font-black text-gray-400 uppercase tracking-widest px-1">
+                      <span>Registered</span>
+                      <span className="text-gray-700 font-bold">{formatDate(user.createdAt)}</span>
+                   </div>
+                </div>
+              </div>
+            </div>
           </div>
 
-          {/* Alert Messages */}
-          {error && (
-            <div className="mb-6 p-4 bg-red-50 border border-red-200 text-red-700 rounded-xl flex items-center gap-3 animate-fadeIn">
-              <span className="w-1.5 h-1.5 rounded-full bg-red-500"></span>
-              {error}
-            </div>
-          )}
-
-          {success && (
-            <div className="mb-6 p-4 bg-green-50 border border-green-200 text-green-700 rounded-xl flex items-center gap-3 animate-fadeIn">
-              <span className="w-1.5 h-1.5 rounded-full bg-green-500"></span>
-              {success}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="space-y-8">
-            {/* Form Fields - Grid Layout */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="form-group">
-                <label className="block text-sm font-bold text-gray-700 mb-2">
-                  Full Name <span className="text-primary">*</span>
-                </label>
-                <input
-                  type="text"
-                  name="name"
-                  value={user.name}
-                  onChange={handleChange}
-                  required
-                  disabled={saving}
-                  className={`w-full h-[50px] px-4 rounded-xl border-2 bg-gray-50 focus:bg-white transition-smooth outline-none ${
-                    nameError 
-                      ? 'border-red-300 focus:border-red-500' 
-                      : 'border-transparent focus:border-primary'
-                  }`}
-                  placeholder="Enter your name"
-                />
-                {nameError && <p className="text-sm text-red-500 mt-1 ml-1">{nameError}</p>}
+          {/* Right Side: Configuration Card */}
+          <div className="lg:col-span-2 animate-scaleIn" style={{ animationDelay: '100ms' }}>
+            <div className="card-premium p-10 shadow-premium border-gray-100/50 min-h-full">
+              <div className="flex items-center gap-4 mb-10 pb-6 border-b border-gray-100">
+                 <div className="w-12 h-12 bg-gray-50 rounded-2xl flex items-center justify-center text-gray-400">
+                    <FiSettings size={24} />
+                 </div>
+                 <div>
+                    <h3 className="text-xl font-black text-gray-900">Identification Specs</h3>
+                    <p className="text-sm text-gray-500 font-medium">Configure your core account parameters</p>
+                 </div>
               </div>
 
-              <div className="form-group">
-                <label className="block text-sm font-bold text-gray-700 mb-2">
-                  Email Address <span className="text-primary">*</span>
-                </label>
-                <input
-                  type="email"
-                  name="email"
-                  value={user.email}
-                  disabled
-                  className="w-full h-[50px] px-4 rounded-xl border-2 border-transparent bg-gray-100 text-gray-500 cursor-not-allowed"
-                  placeholder="email@example.com"
-                />
-                <p className="text-xs text-gray-400 mt-1 ml-1">Email cannot be changed</p>
-              </div>
-
-              <div className="form-group md:col-span-2">
-                <label className="block text-sm font-bold text-gray-700 mb-2">
-                  Phone Number
-                </label>
-                <input
-                  type="text"
-                  name="phone"
-                  value={user.phone}
-                  onChange={handleChange}
-                  disabled={saving}
-                  className={`w-full h-[50px] px-4 rounded-xl border-2 bg-gray-50 focus:bg-white transition-smooth outline-none ${
-                    phoneError 
-                      ? 'border-red-300 focus:border-red-500' 
-                      : 'border-transparent focus:border-primary'
-                  }`}
-                  placeholder="Enter your phone number (e.g., 081234567890)"
-                />
-                {phoneError ? (
-                  <p className="text-sm text-red-500 mt-1 ml-1">{phoneError}</p>
-                ) : (
-                  <p className="text-xs text-gray-400 mt-1 ml-1">Format: 08xxxxxxxxxx or +62xxxxxxxxxxx</p>
-                )}
-              </div>
-            </div>
-
-            {/* Account Information Section */}
-            <div className="bg-gradient-to-br from-gray-50 to-gray-100 p-6 rounded-2xl border border-gray-100">
-              <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
-                <span className="w-1 h-6 bg-primary rounded-full"></span>
-                Account Information
-              </h3>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between p-3 bg-white rounded-xl shadow-sm">
-                  <span className="text-sm text-gray-500 font-medium">Role</span>
-                  <span className="px-3 py-1 bg-blue-50 text-blue-600 rounded-lg text-sm font-bold capitalize">
-                    {authUser?.role || 'admin'}
-                  </span>
+              {/* Status Messages */}
+              {error && (
+                <div className="mb-8 p-5 bg-red-50 border border-red-100 text-red-700 rounded-2xl flex items-center gap-4 animate-fadeIn">
+                  <div className="w-2 h-2 rounded-full bg-red-500"></div>
+                  <span className="font-bold text-sm">{error}</span>
                 </div>
-                <div className="flex items-center justify-between p-3 bg-white rounded-xl shadow-sm">
-                  <span className="text-sm text-gray-500 font-medium">Status</span>
-                  <span className={`px-3 py-1 rounded-lg text-sm font-bold flex items-center gap-1 ${
-                    authUser?.isVerified ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'
-                  }`}>
-                    {authUser?.isVerified ? '✓ Verified' : '✗ Not Verified'}
-                  </span>
-                </div>
-                {authUser?.createdAt && (
-                  <div className="flex items-center justify-between p-3 bg-white rounded-xl shadow-sm">
-                    <span className="text-sm text-gray-500 font-medium">Member Using</span>
-                    <span className="text-sm text-gray-700 font-bold">
-                      {new Date(authUser.createdAt).toLocaleDateString('id-ID', {
-                        year: 'numeric',
-                        month: 'long',
-                        day: 'numeric',
-                      })}
-                    </span>
-                  </div>
-                )}
-                {originalData.updatedAt && (
-                   <div className="flex items-center justify-between px-3 pt-2">
-                    <span className="text-xs text-gray-400">Last profile update</span>
-                    <span className="text-xs text-gray-500 font-medium">
-                      {formatDate(originalData.updatedAt)}
-                    </span>
-                  </div>
-                )}
-              </div>
-            </div>
+              )}
 
-            {/* Action Buttons */}
-            <div className="flex items-center justify-end gap-4 pt-6 border-t border-gray-100">
-              <Button
-                type="button"
-                className="!h-[50px] !px-8 !rounded-xl !text-gray-600 !font-bold hover:!bg-gray-100 transition-smooth"
-                onClick={() => {
-                  setUserData({
-                    name: originalData.name,
-                    email: originalData.email,
-                    phone: originalData.phone,
-                  });
-                  setError('');
-                  setSuccess('');
-                  setNameError('');
-                  setPhoneError('');
-                }}
-                disabled={saving}
-              >
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                className="btn-g !h-[50px] !px-8 !rounded-xl !font-bold !text-white shadow-lg hover:shadow-xl transition-smooth"
-                disabled={saving || !hasChanges()}
-                startIcon={saving ? <CircularProgress size={20} color="inherit" /> : null}
-              >
-                {saving ? 'Saving Changes...' : 'Save Changes'}
-              </Button>
+              {success && (
+                <div className="mb-8 p-5 bg-green-50 border border-green-100 text-green-700 rounded-2xl flex items-center gap-4 animate-fadeIn">
+                  <div className="w-2 h-2 rounded-full bg-green-500 anim-pulse"></div>
+                  <span className="font-bold text-sm">{success}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleSubmit} className="space-y-10">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] px-2">Registered Email</label>
+                    <div className="relative group/field">
+                      <FiMail className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-300" size={18} />
+                      <input
+                        type="email"
+                        value={user.email}
+                        disabled
+                        className="w-full h-[60px] pl-14 pr-6 rounded-2xl border border-gray-100 bg-gray-50/50 text-gray-400 font-bold text-sm cursor-not-allowed"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] px-2">Full Identity</label>
+                    <div className="relative group/field">
+                      <FiUser className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within/field:text-primary transition-colors" size={18} />
+                      <input
+                        type="text"
+                        name="name"
+                        value={user.name}
+                        onChange={handleChange}
+                        required
+                        disabled={saving}
+                        className={`w-full h-[60px] pl-14 pr-6 rounded-2xl border border-gray-100 bg-gray-50/50 focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all outline-none text-gray-900 font-black text-sm uppercase tracking-widest placeholder:lowercase placeholder:font-medium placeholder:tracking-normal ${
+                           nameError ? 'border-red-300 focus:border-red-500' : ''
+                        }`}
+                        placeholder="Update public name"
+                      />
+                    </div>
+                  </div>
+
+                  <div className="space-y-3 md:col-span-2">
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] px-2">Contact Number</label>
+                    <div className="relative group/field">
+                      <FiPhone className="absolute left-5 top-1/2 -translate-y-1/2 text-gray-300 group-focus-within/field:text-primary transition-colors" size={18} />
+                      <input
+                        type="text"
+                        name="phone"
+                        value={user.phone}
+                        onChange={handleChange}
+                        disabled={saving}
+                        className="w-full h-[60px] pl-14 pr-6 rounded-2xl border border-gray-100 bg-gray-50/50 focus:bg-white focus:border-primary focus:ring-4 focus:ring-primary/5 transition-all outline-none text-gray-700 font-mono font-bold text-sm"
+                        placeholder="Update primary phone"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="pt-8 border-t border-gray-100 flex flex-col md:flex-row items-center justify-between gap-6">
+                  <div className="flex flex-col">
+                     <span className="text-[10px] text-gray-400 font-black uppercase tracking-widest">Security Protocol</span>
+                     <span className="text-xs text-gray-500 font-medium italic">Authorized profile updates require session validation</span>
+                  </div>
+                  
+                  <div className="flex items-center gap-4 w-full md:w-auto">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setUserData({
+                          name: originalData.name,
+                          email: originalData.email,
+                          phone: originalData.phone,
+                        });
+                        setError('');
+                        setSuccess('');
+                        setNameError('');
+                        setPhoneError('');
+                      }}
+                      disabled={saving}
+                      className="h-[60px] px-8 rounded-2xl text-gray-500 font-black uppercase tracking-widest text-[11px] hover:bg-gray-50 transition-colors disabled:opacity-30"
+                    >
+                      Reset
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={saving || !hasChanges()}
+                      className="btn-g h-[60px] px-12 rounded-2xl flex items-center gap-4 justify-center disabled:opacity-50 disabled:cursor-not-allowed group transition-all"
+                    >
+                      {saving ? (
+                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                      ) : (
+                        <FiSettings className="group-hover:rotate-90 transition-transform duration-700" size={20} />
+                      )}
+                      <span className="font-black uppercase tracking-[0.2em] text-[11px]">Confirm Changes</span>
+                    </button>
+                  </div>
+                </div>
+              </form>
             </div>
-          </form>
+          </div>
         </div>
       </div>
     </main>

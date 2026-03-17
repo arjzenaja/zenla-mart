@@ -3,7 +3,7 @@ import { Button, Avatar, Divider, Menu, MenuItem, IconButton } from '@mui/materi
 import React, { useState } from 'react'
 import Link from 'next/link'
 import { useAuth } from './AuthProvider'
-import { MdLogout, MdPerson, MdSettings, MdMenu, MdMenuOpen } from 'react-icons/md'
+import { MdLogout, MdPerson, MdSettings, MdMenu } from 'react-icons/md'
 
 const Header = ({ toggleSidebar, isSidebarOpen, isMobile }) => {
   const { user, logout } = useAuth()
@@ -23,58 +23,54 @@ const Header = ({ toggleSidebar, isSidebarOpen, isMobile }) => {
   }
 
   return (
-    <header className='w-full h-[75px] bg-white shadow-premium flex items-center justify-between px-8 sticky top-0 z-50 border-b-2 border-transparent transition-smooth animate-fadeIn' style={{
-      background: 'linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%)',
-      borderImage: 'linear-gradient(90deg, #D96F32, #E88A4D) 1'
-    }}>
-      <div className="flex items-center gap-3 lg:gap-4">
-        {/* Sidebar Toggle Button */}
-        <IconButton 
+    <header className='w-full h-[70px] bg-white flex items-center justify-between px-6 sticky top-0 z-50 border-b border-gray-100 shadow-sm'>
+      {/* Left: Hamburger + Welcome */}
+      <div className="flex items-center gap-4">
+        {/* Hamburger toggle */}
+        <button
           onClick={toggleSidebar}
-          className="!text-primary lg:mr-2 !bg-orange-50 hover:!bg-orange-100 !rounded-xl transition-all"
+          className="w-9 h-9 flex items-center justify-center rounded-xl border border-gray-200 hover:border-primary hover:bg-orange-50 text-gray-500 hover:text-primary transition-all duration-200"
+          title={isSidebarOpen ? 'Collapse sidebar' : 'Expand sidebar'}
         >
-          {isSidebarOpen && !isMobile ? <MdMenuOpen size={24} /> : <MdMenu size={24} />}
-        </IconButton>
+          <MdMenu size={20} />
+        </button>
 
         {user && (
-          <div className="flex flex-col animate-slideIn">
-            <span className="text-[10px] lg:text-xs text-gray-500 uppercase tracking-wider font-semibold">Welcome Back</span>
-            <span className="text-sm lg:text-base font-bold gradient-text truncate max-w-[120px] md:max-w-none">{user.name || user.email}</span>
+          <div className="flex flex-col hidden sm:flex">
+            <span className="text-[10px] text-gray-400 uppercase tracking-widest font-semibold">Welcome back</span>
+            <span className="text-sm font-bold text-gray-800 leading-tight">{user.name || user.email}</span>
           </div>
         )}
       </div>
-      
-      <div className="flex items-center gap-4">
-        <Link href="/profile" className="hidden md:block">
-          <Button 
-            variant="text" 
-            className='!text-gray-600 !font-semibold hover:!text-primary !text-sm transition-smooth hover:!bg-orange-50 !rounded-lg !px-4 !py-2'
+
+      {/* Right: Settings + Avatar */}
+      <div className="flex items-center gap-3">
+        <Link href="/profile">
+          <Button
+            variant="text"
+            size="small"
+            className='!text-gray-500 !font-medium hover:!text-primary !text-sm !rounded-lg !px-3 !py-1.5 hover:!bg-orange-50 !transition-all'
+            startIcon={<MdSettings size={16} />}
           >
-            <MdSettings className="mr-2" size={18} /> Settings
+            <span className="hidden sm:inline">Settings</span>
           </Button>
         </Link>
-        
-        <Divider orientation="vertical" flexItem className='!mx-2 !bg-gray-300 hidden md:block' />
 
-        <button 
+        <Divider orientation="vertical" flexItem className='!h-6 !my-auto !mx-1' />
+
+        <button
           onClick={handleMenuOpen}
-          className="flex items-center gap-3 px-4 py-2 rounded-xl hover:bg-gradient-to-r hover:from-orange-50 hover:to-orange-100 transition-smooth group"
+          className="flex items-center gap-2.5 pl-2 pr-3 py-1.5 rounded-xl hover:bg-gray-50 border border-transparent hover:border-gray-200 transition-all duration-200"
         >
-          <Avatar 
-            src={"/profile.jpg"} 
-            alt="profile" 
-            className="!w-10 !h-10 cursor-pointer !border-2 !border-primary shadow-lg transition-smooth group-hover:!scale-110"
-            sx={{ 
-              background: 'linear-gradient(135deg, #D96F32 0%, #E88A4D 100%)',
-              fontWeight: 700
-            }}
+          <Avatar
+            src={"/profile.jpg"}
+            alt="profile"
+            className="!w-8 !h-8 !text-sm border-2 !border-primary/30"
+            sx={{ background: 'linear-gradient(135deg, #D96F32 0%, #E88A4D 100%)' }}
           >
             {user?.name?.[0] || user?.email?.[0]}
           </Avatar>
-          <div className="hidden sm:flex flex-col items-start">
-            <span className="text-sm font-bold text-gray-800">{user?.name?.split(' ')[0]}</span>
-            <span className="text-xs text-gray-500">Admin</span>
-          </div>
+          <span className="text-sm font-semibold text-gray-700 hidden sm:block">{user?.name?.split(' ')[0]}</span>
         </button>
 
         <Menu
@@ -84,44 +80,26 @@ const Header = ({ toggleSidebar, isSidebarOpen, isMobile }) => {
           anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
           transformOrigin={{ vertical: 'top', horizontal: 'right' }}
           PaperProps={{
-            elevation: 8,
+            elevation: 0,
             sx: {
-              mt: 1.5,
+              mt: 1,
               borderRadius: '12px',
-              minWidth: 200,
-              overflow: 'visible',
-              boxShadow: '0 10px 40px rgba(0,0,0,0.15)',
-              '&:before': {
-                content: '""',
-                display: 'block',
-                position: 'absolute',
-                top: 0,
-                right: 14,
-                width: 10,
-                height: 10,
-                bgcolor: 'background.paper',
-                transform: 'translateY(-50%) rotate(45deg)',
-                zIndex: 0,
-              },
-            },
+              border: '1px solid #f3f4f6',
+              boxShadow: '0 10px 40px rgba(0,0,0,0.08)',
+              minWidth: 160,
+            }
           }}
         >
           <Link href="/profile">
-            <MenuItem 
-              onClick={handleMenuClose} 
-              className="gap-3 !py-3 !px-4 hover:!bg-orange-50 transition-smooth"
-            >
-              <MdPerson size={20} className="text-gray-600" />
-              <span className="font-medium">My Profile</span>
+            <MenuItem onClick={handleMenuClose} className="!gap-2 !text-sm !font-medium !text-gray-700 hover:!bg-orange-50 hover:!text-primary !rounded-lg !mx-1">
+              <MdPerson size={18} />
+              <span>My Profile</span>
             </MenuItem>
           </Link>
           <Divider className="!my-1" />
-          <MenuItem 
-            onClick={handleLogout} 
-            className="!text-red-600 gap-3 !py-3 !px-4 hover:!bg-red-50 transition-smooth"
-          >
-            <MdLogout size={20} />
-            <span className="font-medium">Logout</span>
+          <MenuItem onClick={handleLogout} className="!gap-2 !text-sm !font-medium !text-red-500 hover:!bg-red-50 !rounded-lg !mx-1">
+            <MdLogout size={18} />
+            <span>Logout</span>
           </MenuItem>
         </Menu>
       </div>

@@ -8,6 +8,7 @@ import { IoMdClose } from "react-icons/io";
 import { FaRegImages } from "react-icons/fa6";
 import { Button } from "@mui/material";
 import { productsAPI, categoriesAPI, uploadAPI } from "@/lib/api";
+import Breadcrumbs from "@/app/components/Breadcrumbs";
 
 const AddProduct = () => {
   const router = useRouter();
@@ -263,7 +264,11 @@ const AddProduct = () => {
     <div className="p-8 max-w-7xl mx-auto">
       <div className="flex items-center justify-between mb-8 animate-fadeIn">
         <div>
-          <h1 className="text-3xl font-extrabold gradient-text mb-2">
+          <Breadcrumbs items={[
+            { label: "Products", href: "/products-list" },
+            { label: editId ? 'Edit Product' : 'Add Product' }
+          ]} />
+          <h1 className="text-3xl font-extrabold gradient-text mb-2 leading-tight mt-1">
             {editId ? 'Edit Product' : 'Add New Product'}
           </h1>
           <p className="text-gray-600 text-lg">

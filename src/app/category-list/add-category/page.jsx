@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { IoMdClose } from "react-icons/io";
 import { MdOutlineArrowBack } from "react-icons/md";
 import Link from "next/link";
+import Breadcrumbs from "@/app/components/Breadcrumbs";
 
 const AddCategoryPage = () => {
   const router = useRouter();
@@ -114,12 +115,12 @@ const AddCategoryPage = () => {
         {/* Header */}
         <div className="flex items-center justify-between mb-8 animate-fadeIn">
           <div>
-            <div className="flex items-center gap-2 text-primary font-bold mb-2 cursor-pointer hover:underline" onClick={() => router.push("/category-list")}>
-              <MdOutlineArrowBack size={20} />
-              <span>Back to Categories</span>
-            </div>
-            <h1 className="text-3xl font-extrabold gradient-text">Add New Category</h1>
-            <p className="text-gray-600 text-lg mt-1">Create a new product category for your store</p>
+            <Breadcrumbs items={[
+              { label: "Categories", href: "/category-list" },
+              { label: "Add Category" }
+            ]} />
+            <h1 className="text-3xl font-extrabold gradient-text leading-tight mt-1">Add New Category</h1>
+            <p className="text-gray-600 text-lg mt-0.5">Create a new product category for your store</p>
           </div>
           <Button
             onClick={() => router.push("/category-list")}

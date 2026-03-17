@@ -5,6 +5,7 @@ import React, { useState } from "react";
 import { IoMdClose } from "react-icons/io";
 import { useRouter } from "next/navigation";
 import { uploadAPI, bannersAPI } from "@/lib/api";
+import Breadcrumbs from "@/app/components/Breadcrumbs";
 
 const AddSlide = () => {
   const router = useRouter();
@@ -67,7 +68,11 @@ const AddSlide = () => {
       <div className="p-8 max-w-4xl mx-auto">
         <div className="flex items-center justify-between mb-8 animate-fadeIn">
           <div>
-            <h1 className="text-3xl font-extrabold gradient-text mb-2">Add New Banner</h1>
+            <Breadcrumbs items={[
+              { label: "Banners", href: "/banners" },
+              { label: "Add Banner" }
+            ]} />
+            <h1 className="text-3xl font-extrabold gradient-text mb-2 leading-tight mt-1">Add New Banner</h1>
             <p className="text-gray-600 text-lg">Upload and configure a new homepage banner</p>
           </div>
           <button

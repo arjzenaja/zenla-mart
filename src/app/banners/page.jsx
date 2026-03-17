@@ -4,6 +4,7 @@ import React, { useEffect, useState } from "react";
 import MenuItem from "@mui/material/MenuItem";
 import Select, { SelectChangeEvent } from "@mui/material/Select";
 import Search from "../components/Search";
+import Breadcrumbs from "@/app/components/Breadcrumbs";
 
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
@@ -18,6 +19,7 @@ import Tooltip from "@mui/material/Tooltip";
 import { RiEdit2Line } from "react-icons/ri";
 import { IoEyeOutline } from "react-icons/io5";
 import { FaRegTrashAlt } from "react-icons/fa";
+import { MdAdd, MdImage } from "react-icons/md";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { bannersAPI } from "@/lib/api";
@@ -108,17 +110,19 @@ const HomeSlides = () => {
   return (
     <main className="flex-1 min-h-screen">
       <div className="p-8 max-w-7xl mx-auto">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6 animate-fadeIn">
-          <div>
-            <h1 className="text-3xl font-extrabold gradient-text">Banners Management</h1>
-            <p className="text-gray-500 mt-1 font-medium">Configure main home screen slides</p>
-          </div>
-          <Link href={"/banners/add-banner"}>
-            <Button className="btn-g !px-6 !py-3 !rounded-xl !text-white !font-bold shadow-lg hover:shadow-xl transition-smooth flex items-center gap-2">
-              <span className="text-xl">+</span> Add New Banner
-            </Button>
-          </Link>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-8 animate-fadeIn">
+        <div>
+          <Breadcrumbs items={[{ label: "Banners" }]} />
+          <h1 className="text-4xl font-extrabold gradient-text tracking-tight leading-tight mt-1">Marketing Banners</h1>
+          <p className="text-gray-500 mt-2 font-medium uppercase tracking-widest text-[11px] font-black">Configure main home screen promotions</p>
         </div>
+        <Link href={"/banners/add-banner"}>
+          <Button className="btn-g !h-[55px] !px-8 !rounded-2xl !text-white !font-black !uppercase !tracking-widest !text-[11px] shadow-lg hover:shadow-primary/20 transition-all flex items-center gap-3">
+            <MdAdd size={22} />
+            <span>Add New Banner</span>
+          </Button>
+        </Link>
+      </div>
 
         <div className="card-premium p-0 overflow-hidden animate-scaleIn shadow-premium">
           {loading ? (
@@ -141,66 +145,71 @@ const HomeSlides = () => {
           ) : (
             <>
             <TableContainer sx={{ maxHeight: 600 }}>
-              <Table stickyHeader className="table-premium">
-                <TableHead>
+              <Table stickyHeader>
+                <TableHead className="!bg-gray-50/80">
                   <TableRow>
-                    {columns.map((column) => (
-                      <TableCell
-                        key={column.id}
-                        align={column.align}
-                        style={{ minWidth: column.minWidth }}
-                      >
-                        {column.label}
-                      </TableCell>
-                    ))}
+                     <TableCell className="!font-black !text-[10px] !uppercase !tracking-[0.2em] !text-gray-400 !py-6">Banner Visual</TableCell>
+                     <TableCell align="right" className="!font-black !text-[10px] !uppercase !tracking-[0.2em] !text-gray-400 !pr-10">Management</TableCell>
                   </TableRow>
                 </TableHead>
                 <TableBody>
                   {banners
                     .slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage)
                     .map((banner) => (
-                      <TableRow key={banner.id} hover className="transition-colors hover:bg-gray-50">
-                        <TableCell>
-                          <div className="flex items-center gap-4">
+                      <TableRow key={banner.id} hover className="group transition-all hover:bg-orange-50/20">
+                        <TableCell className="!py-6">
+                          <div className="flex items-center gap-8 px-2">
                             {getBannerImageUrl(banner.image) ? (
-                              <div className="relative group w-[240px] h-[120px] rounded-xl overflow-hidden shadow-sm border border-gray-100 bg-gray-50">
+                              <div className="relative group/img w-[280px] h-[140px] rounded-[2rem] overflow-hidden shadow-premium border border-gray-100 bg-gray-50/50">
                                 <img
                                   src={getBannerImageUrl(banner.image)}
                                   alt={banner.title || "banner"}
-                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                  className="w-full h-full object-cover group-hover/img:scale-110 transition-transform duration-700"
                                 />
-                                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors pointer-events-none" />
+                                <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover/img:opacity-100 transition-opacity duration-500" />
                               </div>
                             ) : (
-                                <div className="w-[240px] h-[120px] rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 border border-gray-200 border-dashed">
-                                    No Image
+                                <div className="w-[280px] h-[140px] rounded-[2rem] bg-gray-50 flex items-center justify-center text-gray-300 border border-gray-100 border-dashed">
+                                    <MdImage size={32} />
                                 </div>
                             )}
-                            <div className="flex flex-col">
-                                {banner.title && <span className="font-bold text-gray-800">{banner.title}</span>}
-                                {banner.description && <span className="text-sm text-gray-500 line-clamp-2 max-w-[300px]">{banner.description}</span>}
+                            <div className="flex flex-col gap-2">
+                                <div className="flex items-center gap-2">
+                                   <div className="w-2 h-2 rounded-full bg-primary"></div>
+                                   <span className="font-black text-gray-900 group-hover:text-primary transition-colors text-lg tracking-tight uppercase">{banner.title}</span>
+                                </div>
+                                {banner.description && (
+                                  <p className="text-sm text-gray-500 font-bold max-w-[400px] line-clamp-2 pl-4 leading-relaxed border-l-2 border-gray-100 italic">
+                                    {banner.description}
+                                  </p>
+                                )}
+                                <div className="flex items-center gap-3 pl-4 mt-2">
+                                   <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest bg-gray-50 px-3 py-1 rounded-full border border-gray-100">
+                                      Platform Promo
+                                   </span>
+                                </div>
                             </div>
                           </div>
                         </TableCell>
 
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <Tooltip title="Edit Banner">
-                                <Button
-                                className="!w-10 !h-10 !min-w-[40px] !rounded-lg !border !border-gray-200 !text-gray-600 hover:!bg-blue-50 hover:!text-blue-600 hover:!border-blue-200 transition-all"
-                                onClick={() => handleEdit(banner.id)}
+                        <TableCell align="right" className="!pr-10">
+                          <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-x-4 group-hover:translate-x-0">
+                            <Tooltip title="Modify Banner" arrow>
+                                <button
+                                  className="w-12 h-12 rounded-2xl bg-white border border-gray-100 text-primary hover:bg-primary hover:text-white transition-all shadow-premium flex items-center justify-center"
+                                  onClick={() => handleEdit(banner.id)}
                                 >
-                                <RiEdit2Line size={18} />
-                                </Button>
+                                  <RiEdit2Line size={20} />
+                                </button>
                             </Tooltip>
 
-                            <Tooltip title="Delete Banner">
-                                <Button
-                                className="!w-10 !h-10 !min-w-[40px] !rounded-lg !border !border-gray-200 !text-gray-600 hover:!bg-red-50 hover:!text-red-600 hover:!border-red-200 transition-all"
-                                onClick={() => handleDelete(banner.id)}
+                            <Tooltip title="Remove Permanent" arrow>
+                                <button
+                                  className="w-12 h-12 rounded-2xl bg-white border border-gray-100 text-red-500 hover:bg-red-500 hover:text-white transition-all shadow-premium flex items-center justify-center"
+                                  onClick={() => handleDelete(banner.id)}
                                 >
-                                <FaRegTrashAlt size={18} />
-                                </Button>
+                                  <FaRegTrashAlt size={20} />
+                                </button>
                             </Tooltip>
                           </div>
                         </TableCell>
