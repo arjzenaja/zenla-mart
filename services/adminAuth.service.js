@@ -23,6 +23,10 @@ const loginAdmin = async (email, password) => {
   }
 
   // Verify password
+  if (!user.password) {
+    throw new Error('Account login with provider, please use provider login.');
+  }
+  
   const isPasswordValid = await bcrypt.compare(password, user.password);
 
   if (!isPasswordValid) {

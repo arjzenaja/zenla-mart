@@ -1,15 +1,18 @@
-const { readData, writeData, generateId } = require('../utils/dataHelper.util');
+const prisma = require('../utils/prisma');
 
 const getUserAddresses = async (userId) => {
-  const addresses = await readData('addresses.json');
-  return addresses.filter(addr => addr.userId === userId);
+  return await prisma.address.findMany({
+    where: { userId },
+    orderBy: { createdAt: 'desc' }
+  });
 };
 
 const getAddressById = async (id, userId) => {
-  const addresses = await readData('addresses.json');
-  const address = addresses.find(addr => addr.id === id && addr.userId === userId);
+  const address = await prisma.address.findUnique({
+    where: { id }
+  });
   
-  if (!address) {
+  if (!address || address.userId !== userId) {
     throw new Error('Address not found');
   }
   
@@ -17,76 +20,64 @@ const getAddressById = async (id, userId) => {
 };
 
 const createAddress = async (userId, addressData) => {
-  const addresses = await readData('addresses.json');
-  
-  const newAddress = {
-    id: generateId(),
-    userId,
-    name: addressData.name,
-    phone: addressData.phone,
-    address: addressData.address,
-    city: addressData.city,
-    province: addressData.province,
-    postalCode: addressData.postalCode,
-    label: addressData.label || 'Home', // Home, Office, or Custom
-    isDefault: addressData.isDefault || false,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  };
+  return await prisma.$transaction(async (tx) => {
+    // If this is set as default, unset other defaults for this user
+    if (addressData.isDefault) {
+      await tx.address.updateMany({
+        where: { userId },
+        data: { isDefault: false }
+      });
+    }
 
-  // If this is set as default, unset other defaults
-  if (newAddress.isDefault) {
-    addresses.forEach(addr => {
-      if (addr.userId === userId) {
-        addr.isDefault = false;
+    return await tx.address.create({
+      data: {
+        userId,
+        name: addressData.name,
+        phone: addressData.phone,
+        address: addressData.address,
+        city: addressData.city,
+        province: addressData.province,
+        postalCode: addressData.postalCode,
+        label: addressData.label || 'Home',
+        isDefault: addressData.isDefault || false
       }
     });
-  }
-
-  addresses.push(newAddress);
-  await writeData('addresses.json', addresses);
-  
-  return newAddress;
+  });
 };
 
 const updateAddress = async (id, userId, updateData) => {
-  const addresses = await readData('addresses.json');
-  const addressIndex = addresses.findIndex(addr => addr.id === id && addr.userId === userId);
-  
-  if (addressIndex === -1) {
-    throw new Error('Address not found');
-  }
+  return await prisma.$transaction(async (tx) => {
+    // Check ownership
+    const address = await tx.address.findUnique({ where: { id } });
+    if (!address || address.userId !== userId) {
+      throw new Error('Address not found');
+    }
 
-  // If setting as default, unset other defaults
-  if (updateData.isDefault) {
-    addresses.forEach(addr => {
-      if (addr.userId === userId && addr.id !== id) {
-        addr.isDefault = false;
-      }
+    // If setting as default, unset other defaults
+    if (updateData.isDefault) {
+      await tx.address.updateMany({
+        where: { userId, id: { not: id } },
+        data: { isDefault: false }
+      });
+    }
+
+    return await tx.address.update({
+      where: { id },
+      data: updateData
     });
-  }
-
-  addresses[addressIndex] = {
-    ...addresses[addressIndex],
-    ...updateData,
-    updatedAt: new Date().toISOString()
-  };
-
-  await writeData('addresses.json', addresses);
-  
-  return addresses[addressIndex];
+  });
 };
 
 const deleteAddress = async (id, userId) => {
-  const addresses = await readData('addresses.json');
-  const addressIndex = addresses.findIndex(addr => addr.id === id && addr.userId === userId);
-  
-  if (addressIndex === -1) {
+  // Check ownership before deleting
+  const address = await prisma.address.findUnique({ where: { id } });
+  if (!address || address.userId !== userId) {
     throw new Error('Address not found');
   }
 
-  addresses.splice(addressIndex, 1);
-  await writeData('addresses.json', addresses);
+  await prisma.address.delete({
+    where: { id }
+  });
   
   return true;
 };

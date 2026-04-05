@@ -1,188 +1,201 @@
-const { readData, writeData, generateId } = require('../utils/dataHelper.util');
-const { getProductById } = require('./product.service');
+const prisma = require('../utils/prisma');
 
 const getUserCart = async (userId) => {
-  const carts = await readData('carts.json');
-  const userCart = carts.find(c => c.userId === userId);
+  const cart = await prisma.cart.findUnique({
+    where: { userId },
+    include: {
+      items: {
+        include: {
+          product: {
+            include: {
+              variants: true
+            }
+          }
+        }
+      }
+    }
+  });
   
-  if (!userCart) {
+  if (!cart) {
     return { items: [], total: 0 };
   }
 
   // Calculate total
   let total = 0;
-  for (const item of userCart.items) {
-    try {
-      const product = await getProductById(item.productId);
-      let price = product.price;
-      
-      if (item.variantId && product.variants) {
-        const variant = product.variants.find(v => v.id === item.variantId);
-        if (variant && variant.price) {
-          price = variant.price;
-        }
+  const items = cart.items.map(item => {
+    let price = item.product.price;
+    let variantName = null;
+    
+    if (item.variantId) {
+      const variant = item.product.variants.find(v => v.id === item.variantId);
+      if (variant) {
+        price = variant.price;
+        variantName = variant.name;
       }
-      
-      total += price * item.quantity;
-    } catch (error) {
-      // Product not found, skip
     }
-  }
+    
+    total += price * item.quantity;
+    
+    return {
+      ...item,
+      productName: item.product.name,
+      productImage: item.product.images[0] || '',
+      price,
+      variantName
+    };
+  });
 
   return {
-    items: userCart.items,
+    items,
     total
   };
 };
 
 const addToCart = async (userId, productId, quantity = 1, variantId = null) => {
-  const carts = await readData('carts.json');
-  let userCart = carts.find(c => c.userId === userId);
-  
-  // Verify product exists and get latest stock
-  const product = await getProductById(productId);
+  const product = await prisma.product.findUnique({
+    where: { id: productId },
+    include: { variants: true }
+  });
+
+  if (!product) {
+    throw new Error('Product not found');
+  }
 
   if (quantity <= 0) {
     throw new Error('Quantity must be greater than 0');
   }
 
-  // Get stock for variant or product
+  // Get stock
   let targetStock = product.stock;
-  if (variantId && product.variants) {
+  if (variantId) {
     const variant = product.variants.find(v => v.id === variantId);
     if (!variant) throw new Error('Variant not found');
     targetStock = variant.stock;
   }
 
-  const hasStock = typeof targetStock === 'number' && targetStock >= 0;
+  // Ensure cart exists
+  const cart = await prisma.cart.upsert({
+    where: { userId },
+    update: {},
+    create: { userId }
+  });
 
-  // Jika qty melebihi stok, batasi ke stok maksimum tanpa melempar error
-  if (hasStock && quantity > targetStock) {
-    quantity = targetStock;
-  }
-  
-  if (!userCart) {
-    userCart = {
-      id: generateId(),
-      userId,
-      items: [],
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    carts.push(userCart);
-  }
-
-  // Check if product with same variant already in cart
-  const existingItemIndex = userCart.items.findIndex(item => 
-    item.productId === productId && item.variantId === variantId
-  );
-  
-  if (existingItemIndex !== -1) {
-    const currentQty = userCart.items[existingItemIndex].quantity || 0;
-    let newQty = currentQty + quantity;
-
-    if (hasStock && newQty > targetStock) {
-      newQty = targetStock;
-    }
-
-    userCart.items[existingItemIndex].quantity = newQty;
-  } else {
-    userCart.items.push({
+  // Check if item exists in cart
+  const existingItem = await prisma.cartItem.findFirst({
+    where: {
+      cartId: cart.id,
       productId,
-      variantId,
-      quantity
+      variantId
+    }
+  });
+
+  if (existingItem) {
+    let newQty = existingItem.quantity + quantity;
+    if (newQty > targetStock) newQty = targetStock;
+
+    return await prisma.cartItem.update({
+      where: { id: existingItem.id },
+      data: { quantity: newQty }
+    });
+  } else {
+    let finalQty = quantity;
+    if (finalQty > targetStock) finalQty = targetStock;
+
+    return await prisma.cartItem.create({
+      data: {
+        cartId: cart.id,
+        productId,
+        variantId,
+        quantity: finalQty
+      }
     });
   }
-
-  userCart.updatedAt = new Date().toISOString();
-  
-  await writeData('carts.json', carts);
-  
-  return userCart;
 };
 
 const updateCartItem = async (userId, productId, quantity, variantId = null) => {
-  const carts = await readData('carts.json');
-  const userCart = carts.find(c => c.userId === userId);
-  
-  if (!userCart) {
+  const cart = await prisma.cart.findUnique({
+    where: { userId }
+  });
+
+  if (!cart) {
     throw new Error('Cart not found');
   }
 
-  const itemIndex = userCart.items.findIndex(item => 
-    item.productId === productId && item.variantId === variantId
-  );
-  
-  if (itemIndex === -1) {
+  const existingItem = await prisma.cartItem.findFirst({
+    where: {
+      cartId: cart.id,
+      productId,
+      variantId
+    }
+  });
+
+  if (!existingItem) {
     throw new Error('Item not found in cart');
   }
 
   if (quantity <= 0) {
-    userCart.items.splice(itemIndex, 1);
+    return await prisma.cartItem.delete({
+      where: { id: existingItem.id }
+    });
   } else {
-    // Validate against stock dan batasi ke stok maksimum tanpa melempar error
-    const product = await getProductById(productId);
-    
+    const product = await prisma.product.findUnique({
+      where: { id: productId },
+      include: { variants: true }
+    });
+
     let targetStock = product.stock;
-    if (variantId && product.variants) {
+    if (variantId) {
       const variant = product.variants.find(v => v.id === variantId);
       if (variant) targetStock = variant.stock;
     }
 
-    const hasStock = typeof targetStock === 'number' && targetStock >= 0;
+    let finalQty = quantity;
+    if (finalQty > targetStock) finalQty = targetStock;
 
-    let newQty = quantity;
-    if (hasStock && newQty > targetStock) {
-      newQty = targetStock;
-    }
-
-    userCart.items[itemIndex].quantity = newQty;
+    return await prisma.cartItem.update({
+      where: { id: existingItem.id },
+      data: { quantity: finalQty }
+    });
   }
-
-  userCart.updatedAt = new Date().toISOString();
-  
-  await writeData('carts.json', carts);
-  
-  return userCart;
 };
 
 const removeFromCart = async (userId, productId, variantId = null) => {
-  const carts = await readData('carts.json');
-  const userCart = carts.find(c => c.userId === userId);
-  
-  if (!userCart) {
+  const cart = await prisma.cart.findUnique({
+    where: { userId }
+  });
+
+  if (!cart) {
     throw new Error('Cart not found');
   }
 
-  const itemIndex = userCart.items.findIndex(item => 
-    item.productId === productId && item.variantId === variantId
-  );
-  
-  if (itemIndex === -1) {
+  const existingItem = await prisma.cartItem.findFirst({
+    where: {
+      cartId: cart.id,
+      productId,
+      variantId
+    }
+  });
+
+  if (!existingItem) {
     throw new Error('Item not found in cart');
   }
 
-  userCart.items.splice(itemIndex, 1);
-  userCart.updatedAt = new Date().toISOString();
-  
-  await writeData('carts.json', carts);
-  
-  return userCart;
+  return await prisma.cartItem.delete({
+    where: { id: existingItem.id }
+  });
 };
 
 const clearCart = async (userId) => {
-  const carts = await readData('carts.json');
-  const userCart = carts.find(c => c.userId === userId);
-  
-  if (!userCart) {
-    return true;
-  }
+  const cart = await prisma.cart.findUnique({
+    where: { userId }
+  });
 
-  userCart.items = [];
-  userCart.updatedAt = new Date().toISOString();
-  
-  await writeData('carts.json', carts);
-  
+  if (!cart) return true;
+
+  await prisma.cartItem.deleteMany({
+    where: { cartId: cart.id }
+  });
+
   return true;
 };
 

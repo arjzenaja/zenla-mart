@@ -1,38 +1,41 @@
-const { readData } = require('../utils/dataHelper.util');
+const prisma = require('../utils/prisma');
 
 const getDashboardStats = async () => {
-  const users = await readData('users.json');
-  const orders = await readData('orders.json');
-  const products = await readData('products.json');
-  const categories = await readData('categories.json');
-  
-  // Calculate revenue
-  const revenue = orders
-    .filter(o => o.status === 'delivered')
-    .reduce((sum, order) => sum + order.total, 0);
-  
-  // Calculate pending orders
-  const pendingOrders = orders.filter(o => o.status === 'pending').length;
+  const [userCount, orderCount, productCount, categoryCount, totalRevenue, pendingOrders, deliveredOrders] = await Promise.all([
+    prisma.user.count(),
+    prisma.order.count(),
+    prisma.product.count(),
+    prisma.category.count(),
+    prisma.order.aggregate({
+      where: { status: 'delivered' },
+      _sum: { total: true }
+    }),
+    prisma.order.count({ where: { status: 'pending' } }),
+    prisma.order.findMany({
+      where: { status: 'delivered' },
+      include: { items: true }
+    })
+  ]);
   
   // Calculate total products sold
-  const totalProductsSold = orders
-    .filter(o => o.status === 'delivered')
-    .reduce((sum, order) => {
-      return sum + order.items.reduce((itemSum, item) => itemSum + item.quantity, 0);
-    }, 0);
+  const totalProductsSold = deliveredOrders.reduce((sum, order) => {
+    return sum + order.items.reduce((itemSum, item) => itemSum + item.quantity, 0);
+  }, 0);
   
   // Recent orders (last 5)
-  const recentOrders = orders
-    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt))
-    .slice(0, 5);
+  const recentOrders = await prisma.order.findMany({
+    orderBy: { createdAt: 'desc' },
+    take: 5,
+    include: { user: { select: { name: true } } }
+  });
   
   return {
     stats: {
-      totalUsers: users.length,
-      totalOrders: orders.length,
-      totalProducts: products.length,
-      totalCategories: categories.length,
-      revenue,
+      totalUsers: userCount,
+      totalOrders: orderCount,
+      totalProducts: productCount,
+      totalCategories: categoryCount,
+      revenue: totalRevenue._sum.total || 0,
       pendingOrders,
       totalProductsSold
     },
@@ -41,34 +44,32 @@ const getDashboardStats = async () => {
 };
 
 const getSalesStats = async () => {
-  const orders = await readData('orders.json');
   const months = ["JAN", "FEB", "MAR", "APRIL", "MEI", "JUN", "JUL", "AUG", "SEP", "OCT", "NOV", "DEC"];
-  
   const currentYear = new Date().getFullYear();
   
-  // Initialize map with 0 for all months
-  const salesMap = {};
-  months.forEach(m => salesMap[m] = 0);
-  
-  // Sum up total for delivered orders in the current year
-  orders.forEach(order => {
-    if (order.status === 'delivered') {
-      const orderDate = new Date(order.createdAt);
-      if (orderDate.getFullYear() === currentYear) {
-        const monthIndex = orderDate.getMonth();
-        const monthName = months[monthIndex];
-        salesMap[monthName] += (order.total || 0);
+  const orders = await prisma.order.findMany({
+    where: {
+      status: 'delivered',
+      createdAt: {
+        gte: new Date(currentYear, 0, 1),
+        lt: new Date(currentYear + 1, 0, 1)
       }
     }
   });
+
+  const salesMap = {};
+  months.forEach(m => salesMap[m] = 0);
   
-  // Format for the chart: [{ name: 'JAN', sales: 100 }, ...]
-  const formattedSales = months.map(month => ({
+  orders.forEach(order => {
+    const monthIndex = order.createdAt.getMonth();
+    const monthName = months[monthIndex];
+    salesMap[monthName] += (order.total || 0);
+  });
+  
+  return months.map(month => ({
     name: month,
     sales: salesMap[month]
   }));
-  
-  return formattedSales;
 };
 
 module.exports = {

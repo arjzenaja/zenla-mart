@@ -1,4 +1,4 @@
-const { readData, writeData, generateId } = require('../utils/dataHelper.util');
+const prisma = require('../utils/prisma');
 
 // Helper function to generate slug from name
 const generateSlug = (name) => {
@@ -11,13 +11,15 @@ const generateSlug = (name) => {
 };
 
 const getAllCategories = async () => {
-  const categories = await readData('categories.json');
-  return categories;
+  return await prisma.category.findMany({
+    orderBy: { name: 'asc' }
+  });
 };
 
 const getCategoryById = async (id) => {
-  const categories = await readData('categories.json');
-  const category = categories.find(c => c.id === id);
+  const category = await prisma.category.findUnique({
+    where: { id }
+  });
   
   if (!category) {
     throw new Error('Category not found');
@@ -27,61 +29,35 @@ const getCategoryById = async (id) => {
 };
 
 const createCategory = async (categoryData) => {
-  const categories = await readData('categories.json');
+  const slug = generateSlug(categoryData.name);
   
-  const newCategory = {
-    id: generateId(),
-    name: categoryData.name,
-    slug: generateSlug(categoryData.name),
-    description: categoryData.description || '',
-    image: categoryData.image || '',
-    isActive: categoryData.isActive !== undefined ? categoryData.isActive : true,
-    createdAt: new Date().toISOString(),
-    updatedAt: new Date().toISOString()
-  };
-
-  categories.push(newCategory);
-  await writeData('categories.json', categories);
-  
-  return newCategory;
+  return await prisma.category.create({
+    data: {
+      name: categoryData.name,
+      slug,
+      description: categoryData.description || '',
+      image: categoryData.image || '',
+      isActive: categoryData.isActive !== undefined ? categoryData.isActive : true
+    }
+  });
 };
 
 const updateCategory = async (id, updateData) => {
-  const categories = await readData('categories.json');
-  const categoryIndex = categories.findIndex(c => c.id === id);
-  
-  if (categoryIndex === -1) {
-    throw new Error('Category not found');
-  }
-
-  // Generate new slug if name is being updated
-  const updatedData = { ...updateData };
+  const data = { ...updateData };
   if (updateData.name) {
-    updatedData.slug = generateSlug(updateData.name);
+    data.slug = generateSlug(updateData.name);
   }
 
-  categories[categoryIndex] = {
-    ...categories[categoryIndex],
-    ...updatedData,
-    updatedAt: new Date().toISOString()
-  };
-
-  await writeData('categories.json', categories);
-  
-  return categories[categoryIndex];
+  return await prisma.category.update({
+    where: { id },
+    data
+  });
 };
 
 const deleteCategory = async (id) => {
-  const categories = await readData('categories.json');
-  const categoryIndex = categories.findIndex(c => c.id === id);
-  
-  if (categoryIndex === -1) {
-    throw new Error('Category not found');
-  }
-
-  categories.splice(categoryIndex, 1);
-  await writeData('categories.json', categories);
-  
+  await prisma.category.delete({
+    where: { id }
+  });
   return true;
 };
 

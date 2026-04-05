@@ -1,81 +1,77 @@
-const { readData, writeData, generateId } = require('../utils/dataHelper.util');
+const prisma = require('../utils/prisma');
 const { getProductById, reduceStockBatch } = require('./product.service');
-const { clearCart } = require('./cart.service');
+const { clearCart, getUserCart } = require('./cart.service');
+const { getAddressById } = require('./address.service');
 
 const getUserOrders = async (userId, searchQuery = null) => {
-  const orders = await readData('orders.json');
-  let userOrders = orders.filter(order => order.userId === userId);
+  const where = { userId };
   
-  // Filter by order number if search query provided
   if (searchQuery) {
-    const query = searchQuery.toLowerCase();
-    userOrders = userOrders.filter(order => 
-      order.orderNumber?.toLowerCase().includes(query) ||
-      order.id?.toLowerCase().includes(query)
-    );
+    where.OR = [
+      { orderNumber: { contains: searchQuery, mode: 'insensitive' } },
+      { id: { contains: searchQuery, mode: 'insensitive' } }
+    ];
   }
   
-  return userOrders.sort((a, b) => 
-    new Date(b.createdAt) - new Date(a.createdAt)
-  );
+  return await prisma.order.findMany({
+    where,
+    include: { items: true },
+    orderBy: { createdAt: 'desc' }
+  });
 };
 
 const getAllOrders = async (filters = {}) => {
-  let orders = await readData('orders.json');
+  const { status, search, startDate, endDate, page = 1, limit = 10 } = filters;
   
-  // Filter by status
-  if (filters.status) {
-    orders = orders.filter(o => o.status === filters.status);
+  const where = {};
+  if (status) where.status = status;
+  if (search) {
+    where.OR = [
+      { orderNumber: { contains: search, mode: 'insensitive' } },
+      { id: { contains: search, mode: 'insensitive' } }
+    ];
   }
-  
-  // Filter by order number search
-  if (filters.search) {
-    const query = filters.search.toLowerCase();
-    orders = orders.filter(o => 
-      o.orderNumber?.toLowerCase().includes(query) ||
-      o.id?.toLowerCase().includes(query)
-    );
+  if (startDate || endDate) {
+    where.createdAt = {};
+    if (startDate) where.createdAt.gte = new Date(startDate);
+    if (endDate) where.createdAt.lte = new Date(endDate);
   }
-  
-  // Filter by date range
-  if (filters.startDate) {
-    orders = orders.filter(o => new Date(o.createdAt) >= new Date(filters.startDate));
-  }
-  if (filters.endDate) {
-    orders = orders.filter(o => new Date(o.createdAt) <= new Date(filters.endDate));
-  }
-  
-  // Sort by date (newest first)
-  orders.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-  
-  // Pagination
-  const page = parseInt(filters.page) || 1;
-  const limit = parseInt(filters.limit) || 10;
-  const startIndex = (page - 1) * limit;
-  const endIndex = startIndex + limit;
-  
-  const paginatedOrders = orders.slice(startIndex, endIndex);
-  
+
+  const skip = (parseInt(page) - 1) * parseInt(limit);
+  const take = parseInt(limit);
+
+  const [orders, total] = await Promise.all([
+    prisma.order.findMany({
+      where,
+      include: { items: true, user: { select: { name: true, email: true } } },
+      orderBy: { createdAt: 'desc' },
+      skip,
+      take
+    }),
+    prisma.order.count({ where })
+  ]);
+
   return {
-    orders: paginatedOrders,
+    orders,
     pagination: {
-      page,
-      limit,
-      total: orders.length,
-      totalPages: Math.ceil(orders.length / limit)
+      page: parseInt(page),
+      limit: parseInt(limit),
+      total,
+      totalPages: Math.ceil(total / take)
     }
   };
 };
 
 const getOrderById = async (id, userId = null) => {
-  const orders = await readData('orders.json');
-  let order = orders.find(o => o.id === id);
+  const order = await prisma.order.findUnique({
+    where: { id },
+    include: { items: true, user: { select: { name: true, email: true } } }
+  });
   
   if (!order) {
     throw new Error('Order not found');
   }
   
-  // If userId provided, verify ownership
   if (userId && order.userId !== userId) {
     throw new Error('Order not found');
   }
@@ -84,170 +80,159 @@ const getOrderById = async (id, userId = null) => {
 };
 
 const createOrder = async (userId, orderData) => {
-  const orders = await readData('orders.json');
-  const { getUserCart } = require('./cart.service');
-  const { getAddressById } = require('./address.service');
-  
-  let cartItemsToProcess = [];
+  // Use transaction to ensure everything succeeds or fails together
+  return await prisma.$transaction(async (tx) => {
+    let cartItemsToProcess = [];
 
-  // If items are provided in orderData (e.g. from mobile), use them
-  if (orderData.items && Array.isArray(orderData.items) && orderData.items.length > 0) {
-    cartItemsToProcess = orderData.items;
-  } else {
-    // Get cart from database
-    const cart = await getUserCart(userId);
-    if (!cart.items || cart.items.length === 0) {
-      throw new Error('Cart is empty');
-    }
-    cartItemsToProcess = cart.items;
-  }
-  
-  // Verify address
-  const address = await getAddressById(orderData.addressId, userId);
-  
-  // Calculate order items and total
-  const orderItems = [];
-  let subtotal = 0;
-  
-  for (const item of cartItemsToProcess) {
-    // item structure might differ slightly between cart (DB) and mobile payload
-    // Mobile payload expected: { productId, variantId, quantity }
-    
-    const product = await getProductById(item.productId);
-    
-    let variantName = null;
-    let targetPrice = product.price;
-    let targetStock = product.stock;
-
-    if (item.variantId && product.variants) {
-      const variant = product.variants.find(v => v.id === item.variantId || v._id === item.variantId);
-      if (!variant) {
-        throw new Error(`Variant not found for product ${product.name}`);
+    // 1. Get Items
+    if (orderData.items && Array.isArray(orderData.items) && orderData.items.length > 0) {
+      cartItemsToProcess = orderData.items;
+    } else {
+      const cart = await getUserCart(userId);
+      if (!cart.items || cart.items.length === 0) {
+        throw new Error('Cart is empty');
       }
-      variantName = variant.name;
-      if (variant.price) targetPrice = variant.price;
-      targetStock = variant.stock;
+      cartItemsToProcess = cart.items;
     }
-
-    if (targetStock < item.quantity) {
-      throw new Error(`Insufficient stock for ${product.name}${variantName ? ` (${variantName})` : ''}`);
-    }
-
-    const itemTotal = targetPrice * item.quantity;
-    subtotal += itemTotal;
     
-    orderItems.push({
-      productId: product.id,
-      variantId: item.variantId || null,
-      variantName: variantName,
-      productName: product.name,
-      productImage: product.images[0] || '',
-      price: targetPrice,
-      quantity: item.quantity,
-      total: itemTotal
-    });
-  }
-  
-  const shippingCost = 0;
-  const total = subtotal + shippingCost;
-  
-  // Generate invoice number
-  const now = new Date();
-  const dateStr = now.getFullYear().toString() + 
-                 (now.getMonth() + 1).toString().padStart(2, '0') + 
-                 now.getDate().toString().padStart(2, '0');
-  const randomStr = Math.floor(1000 + Math.random() * 9000).toString();
-  const invoiceNumber = `INV-${dateStr}-${randomStr}`;
+    // 2. Verify Address
+    const address = await getAddressById(orderData.addressId, userId);
+    
+    // 3. Prepare Order Items & Calculate Subtotal
+    const orderItemsData = [];
+    let subtotal = 0;
+    
+    for (const item of cartItemsToProcess) {
+      const product = await tx.product.findUnique({
+        where: { id: item.productId },
+        include: { variants: true }
+      });
+      
+      if (!product) throw new Error(`Product not found: ${item.productId}`);
+      
+      let variantName = null;
+      let targetPrice = product.price;
+      let targetStock = product.stock;
 
-  const newOrder = {
-    id: generateId(),
-    userId,
-    orderNumber: 'ORD-' + Date.now(),
-    invoiceNumber,
-    items: orderItems,
-    address: {
-      name: address.name,
-      phone: address.phone,
-      address: address.address,
-      city: address.city,
-      province: address.province,
-      postalCode: address.postalCode
-    },
-    subtotal,
-    shippingCost,
-    shippingMethod: orderData.shippingMethod || 'regular',
-    shippingEstimate: orderData.shippingEstimate || '',
-    total,
-    status: 'pending',
-    paymentMethod: orderData.paymentMethod || 'cash',
-    paymentProofUrl: orderData.paymentProofUrl || '',
-    paymentStatus: orderData.paymentMethod === 'cod' ? 'pending' : 'pending', // Both pending initially, but cod is handled differently
-    notes: orderData.notes || '',
-    createdAt: now.toISOString(),
-    updatedAt: now.toISOString()
-  };
-  
-  orders.push(newOrder);
-  await writeData('orders.json', orders);
-  
-  // Reduce stock for all products in the order (atomic operation)
-  try {
-    const stockReductionItems = orderItems.map(item => ({
-      productId: item.productId,
-      variantId: item.variantId,
-      quantity: item.quantity
-    }));
-    console.log('Reducing stock for order items:', stockReductionItems);
-    await reduceStockBatch(stockReductionItems);
-    console.log('Stock reduced successfully for order:', newOrder.id);
-  } catch (stockError) {
-    console.error('Error reducing stock, rolling back order:', stockError);
-    // If stock reduction fails, we should rollback the order
-    // Remove the order we just created
-    orders.pop();
-    await writeData('orders.json', orders);
-    throw stockError;
-  }
-  
-  // Clear cart only if we used the backend cart
-  // If items were passed explicitly (e.g. mobile), we don't clear backend cart 
-  // (though mobile should clear its local cart)
-  if (!orderData.items) {
-    await clearCart(userId);
-  }
-  
-  return newOrder;
+      if (item.variantId) {
+        const variant = product.variants.find(v => v.id === item.variantId);
+        if (!variant) throw new Error(`Variant not found for product ${product.name}`);
+        variantName = variant.name;
+        targetPrice = variant.price;
+        targetStock = variant.stock;
+      }
+
+      if (targetStock < item.quantity) {
+        throw new Error(`Insufficient stock for ${product.name}${variantName ? ` (${variantName})` : ''}`);
+      }
+
+      const itemTotal = targetPrice * item.quantity;
+      subtotal += itemTotal;
+      
+      orderItemsData.push({
+        productId: product.id,
+        variantId: item.variantId || null,
+        variantName: variantName,
+        productName: product.name,
+        productImage: product.images[0] || '',
+        price: targetPrice,
+        quantity: item.quantity,
+        total: itemTotal
+      });
+    }
+    
+    const shippingCost = 0;
+    const total = subtotal + shippingCost;
+    
+    // 4. Generate Invoice & Order Number
+    const now = new Date();
+    const dateStr = now.getFullYear().toString() + (now.getMonth() + 1).toString().padStart(2, '0') + now.getDate().toString().padStart(2, '0');
+    const invoiceNumber = `INV-${dateStr}-${Math.floor(1000 + Math.random() * 9000)}`;
+    const orderNumber = `ORD-${Date.now()}`;
+
+    // 5. Create Order & Items
+    const newOrder = await tx.order.create({
+      data: {
+        userId,
+        orderNumber,
+        subtotal,
+        shippingCost,
+        total,
+        status: 'pending',
+        paymentMethod: orderData.paymentMethod || 'cash',
+        paymentProofUrl: orderData.paymentProofUrl || '',
+        paymentStatus: 'pending',
+        notes: orderData.notes || '',
+        shippingMethod: orderData.shippingMethod || 'regular',
+        shippingEstimate: orderData.shippingEstimate || '',
+        addressName: address.name,
+        addressPhone: address.phone,
+        addressDetail: address.address,
+        addressCity: address.city,
+        addressProvince: address.province,
+        addressPostalCode: address.postalCode,
+        items: {
+          create: orderItemsData
+        }
+      },
+      include: { items: true }
+    });
+    
+    // 6. Reduce Stock Batch (Atomic inside transaction)
+    for (const item of orderItemsData) {
+      if (item.variantId) {
+        const variant = await tx.productVariant.findUnique({ where: { id: item.variantId } });
+        if (variant.stock < item.quantity) throw new Error(`Stock mismatch for variant ${variant.name}`);
+        
+        await tx.productVariant.update({
+          where: { id: item.variantId },
+          data: { stock: { decrement: item.quantity } }
+        });
+        await tx.product.update({
+          where: { id: item.productId },
+          data: { stock: { decrement: item.quantity } }
+        });
+      } else {
+        const product = await tx.product.findUnique({ where: { id: item.productId } });
+        if (product.stock < item.quantity) throw new Error(`Stock mismatch for product ${product.name}`);
+        
+        await tx.product.update({
+          where: { id: item.productId },
+          data: { stock: { decrement: item.quantity } }
+        });
+      }
+    }
+    
+    // 7. Clear Cart
+    if (!orderData.items) {
+      const cart = await tx.cart.findUnique({ where: { userId } });
+      if (cart) {
+        await tx.cartItem.deleteMany({ where: { cartId: cart.id } });
+      }
+    }
+    
+    return newOrder;
+  });
 };
 
 const updateOrderStatus = async (id, status, userId = null) => {
-  const orders = await readData('orders.json');
-  const orderIndex = orders.findIndex(o => o.id === id);
-  
-  if (orderIndex === -1) {
-    throw new Error('Order not found');
-  }
-  
-  // If userId provided, verify ownership (for user updates)
-  if (userId && orders[orderIndex].userId !== userId) {
-    throw new Error('Order not found');
-  }
-  
+  const where = { id };
+  if (userId) where.userId = userId;
+
   const validStatuses = ['pending', 'processing', 'shipped', 'delivered', 'ready_for_pickup', 'picked_up', 'cancelled'];
   if (!validStatuses.includes(status)) {
     throw new Error('Invalid order status');
   }
   
-  orders[orderIndex].status = status;
-  orders[orderIndex].updatedAt = new Date().toISOString();
-  
-  // Update payment status if order is delivered or picked up
+  const data = { status };
   if (status === 'delivered' || status === 'picked_up') {
-    orders[orderIndex].paymentStatus = 'paid';
+    data.paymentStatus = 'paid';
   }
   
-  await writeData('orders.json', orders);
-  
-  return orders[orderIndex];
+  return await prisma.order.update({
+    where,
+    data
+  });
 };
 
 module.exports = {

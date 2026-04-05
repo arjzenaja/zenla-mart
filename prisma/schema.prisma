@@ -1,0 +1,221 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id            String    @id @default(uuid())
+  name          String
+  email         String    @unique
+  password      String?
+  role          String    @default("user")
+  phone         String?   @default("")
+  address       String?   @default("")
+  city          String?   @default("")
+  province      String?   @default("")
+  postalCode    String?   @default("")
+  isVerified    Boolean   @default(false)
+  otp           String?
+  otpExpires    DateTime?
+  otpVerified   Boolean   @default(false)
+  otpAttempts   Int       @default(0)
+  image         String?
+  provider      String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  addresses     Address[]
+  orders        Order[]
+  cart          Cart?
+  wishlist      Wishlist?
+  reviews       ProductReview[]
+}
+
+model Address {
+  id          String   @id @default(uuid())
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name        String
+  phone       String
+  address     String
+  city        String
+  province    String
+  postalCode  String
+  isDefault   Boolean  @default(false)
+  label       String?  @default("Home")
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Category {
+  id          String    @id @default(uuid())
+  name        String
+  slug        String    @unique
+  description String?
+  image       String?
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  products    Product[]
+}
+
+model Product {
+  id               String    @id @default(uuid())
+  name             String
+  description      String?
+  brand            String?   @default("")
+  variant          String?   @default("")
+  composition      String?   @default("")
+  allergyInfo      String?   @default("")
+  expiryEstimate   String?   @default("")
+  shippingOrigin   String?   @default("")
+  shippingEstimate String?   @default("")
+  price            Float
+  stock            Int
+  images           String[]
+  weight           Float     @default(0)
+  unit             String?   @default("pcs")
+  isActive         Boolean   @default(true)
+  rating           Float     @default(0)
+  isFeatured       Boolean   @default(false)
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+
+  categoryId       String
+  category         Category  @relation(fields: [categoryId], references: [id])
+  
+  variants         ProductVariant[]
+  reviews          ProductReview[]
+  orderItems       OrderItem[]
+  cartItems        CartItem[]
+  wishlistItems    WishlistItem[]
+}
+
+model ProductVariant {
+  id        String   @id @default(uuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  name      String
+  price     Float
+  stock     Int
+}
+
+model ProductReview {
+  id        String   @id @default(uuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  name      String
+  rating    Float
+  comment   String
+  createdAt DateTime @default(now())
+}
+
+model Cart {
+  id        String     @id @default(uuid())
+  userId    String     @unique
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     CartItem[]
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+}
+
+model CartItem {
+  id        String   @id @default(uuid())
+  cartId    String
+  cart      Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+  productId String
+  product   Product  @relation(fields: [productId], references: [id])
+  variantId String?
+  quantity  Int      @default(1)
+}
+
+model Order {
+  id               String      @id @default(uuid())
+  userId           String?
+  user             User?       @relation(fields: [userId], references: [id], onDelete: SetNull)
+  orderNumber      String      @unique
+  subtotal         Float
+  shippingCost     Float       @default(0)
+  total            Float
+  status           String      @default("pending")
+  paymentMethod    String      @default("cash")
+  paymentStatus    String      @default("pending")
+  paymentProofUrl  String?     @default("")
+  notes            String?     @default("")
+  shippingMethod   String?     @default("regular")
+  shippingEstimate String?     @default("")
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+
+  addressName      String
+  addressPhone     String
+  addressDetail    String
+  addressCity      String
+  addressProvince  String
+  addressPostalCode String
+
+  items            OrderItem[]
+}
+
+model OrderItem {
+  id           String  @id @default(uuid())
+  orderId      String
+  order        Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  productId    String
+  product      Product @relation(fields: [productId], references: [id])
+  productName  String
+  productImage String?
+  variantId    String?
+  variantName  String?
+  price        Float
+  quantity     Int
+  total        Float
+}
+
+model Wishlist {
+  id        String         @id @default(uuid())
+  userId    String         @unique
+  user      User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     WishlistItem[]
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+}
+
+model WishlistItem {
+  id         String   @id @default(uuid())
+  wishlistId String
+  wishlist   Wishlist @relation(fields: [wishlistId], references: [id], onDelete: Cascade)
+  productId  String
+  product    Product  @relation(fields: [productId], references: [id])
+}
+
+model Banner {
+  id        String   @id @default(uuid())
+  title     String?  @default("")
+  image     String
+  link      String?  @default("")
+  isActive  Boolean  @default(true)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+model Slide {
+  id        String   @id @default(uuid())
+  title     String?  @default("")
+  subtitle  String?  @default("")
+  image     String
+  link      String?  @default("")
+  cta_text  String?  @default("")
+  isActive  Boolean  @default(true)
+  order     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}

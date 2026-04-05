@@ -1,50 +1,37 @@
-const { readData, writeData, ensureDataDir } = require('./dataHelper.util');
+const prisma = require('./prisma');
 const bcrypt = require('bcryptjs');
 
 const initializeData = async () => {
   try {
-    // Initialize users.json
-    const users = await readData('users.json');
-    if (users.length === 0) {
+    // Check if any admin exists
+    const adminCount = await prisma.user.count({
+      where: { role: 'admin' }
+    });
+
+    if (adminCount === 0) {
+      console.log('ℹ️ No admin account found. Creating default admin...');
       const hashedPassword = await bcrypt.hash('admin123', 10);
-      const adminUser = {
-        id: 'admin-' + Date.now(),
-        name: 'Admin',
-        email: 'admin@zenlamart.com',
-        password: hashedPassword,
-        role: 'admin',
-        phone: '081234567890',
-        isVerified: true,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString()
-      };
-      await writeData('users.json', [adminUser]);
-      console.log('✅ Admin user created: admin@zenlamart.com / admin123');
+      
+      await prisma.user.create({
+        data: {
+          name: 'Admin',
+          email: 'admin@zenlamart.com',
+          password: hashedPassword,
+          role: 'admin',
+          phone: '081234567890',
+          isVerified: true
+        }
+      });
+      
+      console.log('✅ Default admin user created: admin@zenlamart.com / admin123');
     }
 
-    // Initialize other data files
-    const dataFiles = [
-      'products.json',
-      'categories.json',
-      'banners.json',
-      'slides.json',
-      'carts.json',
-      'wishlists.json',
-      'orders.json',
-      'addresses.json'
-    ];
-
-    for (const file of dataFiles) {
-      const data = await readData(file);
-      if (data.length === 0) {
-        await writeData(file, []);
-      }
-    }
-
-    console.log('✅ Data files initialized');
+    console.log('✅ Database connection verified and initialized');
   } catch (error) {
-    console.error('Error initializing data:', error);
-    throw error;
+    console.error('❌ Database initialization error:', error.message);
+    console.log('⚠️ Please ensure DATABASE_URL is correctly set in your .env file.');
+    // Don't throw error here to allow server to start even if DB is not ready yet
+    // But it's better to log it clearly.
   }
 };
 

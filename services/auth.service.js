@@ -1,7 +1,8 @@
 const bcrypt = require('bcryptjs');
-const { getUserByEmail, verifyUser, setOTP, incrementOTPAttempts, clearOTP } = require('./user.service');
+const { getUserByEmail, verifyUser, setOTP, incrementOTPAttempts, clearOTP, updateUserPassword, updateUser } = require('./user.service');
 const { generateToken } = require('../utils/jwt.util');
 const sendOtpEmail = require('../utils/sendOtpEmail');
+const prisma = require('../utils/prisma');
 
 const login = async (email, password) => {
   const user = await getUserByEmail(email);
@@ -101,9 +102,7 @@ const sendResetOTP = async (email) => {
 };
 
 // Verify OTP for password reset (without auto-verifying user)
-// Mark OTP as verified but don't clear it yet (will be cleared after password reset)
 const verifyResetOTP = async (email, otp) => {
-  const { readData, writeData } = require('../utils/dataHelper.util');
   const user = await getUserByEmail(email);
   
   if (!user) {
@@ -125,21 +124,18 @@ const verifyResetOTP = async (email, otp) => {
     throw new Error('OTP expired');
   }
 
-  // Mark OTP as verified by storing a flag
-  const users = await readData('users.json');
-  const userIndex = users.findIndex(u => u.email === email);
-  if (userIndex !== -1) {
-    users[userIndex].otpVerified = true;
-    users[userIndex].updatedAt = new Date().toISOString();
-    await writeData('users.json', users);
-  }
+  // Mark OTP as verified
+  await prisma.user.update({
+    where: { email },
+    data: {
+      otpVerified: true
+    }
+  });
   
   return { valid: true };
 };
 
 const resetPassword = async (email, otp, newPassword) => {
-  const { updateUserPassword, clearOTP } = require('./user.service');
-  const { readData, writeData } = require('../utils/dataHelper.util');
   const user = await getUserByEmail(email);
   
   if (!user) {
@@ -165,13 +161,12 @@ const resetPassword = async (email, otp, newPassword) => {
   
   // Clear OTP and verified flag after successful password reset
   await clearOTP(email);
-  const users = await readData('users.json');
-  const userIndex = users.findIndex(u => u.email === email);
-  if (userIndex !== -1) {
-    users[userIndex].otpVerified = false;
-    users[userIndex].updatedAt = new Date().toISOString();
-    await writeData('users.json', users);
-  }
+  await prisma.user.update({
+    where: { email },
+    data: {
+      otpVerified: false
+    }
+  });
   
   return { message: 'Password berhasil diperbarui' };
 };
