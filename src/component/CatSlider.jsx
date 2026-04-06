@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link';
 import Image from 'next/image';
+import { categoriesAPI } from '../lib/api';
 
 const CatSlider = () => {
   const [categories, setCategories] = useState([]);
@@ -39,13 +40,7 @@ const CatSlider = () => {
     const fetchCategories = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch('http://localhost:5000/api/categories');
-        
-        if (!response.ok) {
-          throw new Error('Failed to fetch categories');
-        }
-        
-        const data = await response.json();
+        const data = await categoriesAPI.getAll();
         setCategories(data.categories || []);
         setError(null);
       } catch (err) {

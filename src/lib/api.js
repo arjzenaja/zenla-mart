@@ -5,7 +5,7 @@ const API_URL = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api')
  */
 async function fetchAPI(endpoint, options = {}) {
   const url = `${API_URL}${endpoint}`;
-  
+
   const defaultOptions = {
     headers: {
       'Content-Type': 'application/json',
@@ -32,7 +32,7 @@ async function fetchAPI(endpoint, options = {}) {
 
   try {
     const response = await fetch(url, config);
-    
+
     // Handle network errors (when fetch itself fails)
     if (!response) {
       throw new Error('Network error: Unable to connect to the server. Please make sure the server is running.');
@@ -60,12 +60,12 @@ async function fetchAPI(endpoint, options = {}) {
   } catch (error) {
     // Handle network errors (fetch failed completely)
     if (error instanceof TypeError && error.message === 'Failed to fetch') {
-      const networkError = new Error('Unable to connect to the server. Please make sure the backend server is running on http://localhost:5000');
+      const networkError = new Error(`Unable to connect to the server. Please make sure the backend server is running on ${API_URL}`);
       console.error('API Network Error:', networkError.message);
       console.error('Make sure the server is running. You can start it by running: cd server && npm start');
       throw networkError;
     }
-    
+
     // Untuk error bisnis seperti "Quantity exceeds available stock",
     // kita biarkan saja dilempar ke pemanggil tanpa log error merah di console.
     throw error;
@@ -79,16 +79,16 @@ export const authAPI = {
       method: 'POST',
       body: JSON.stringify({ email, password }),
     });
-    
+
     // Save token to localStorage if available
     if (typeof window !== 'undefined' && response.token) {
       localStorage.setItem('token', response.token);
     }
-    
+
     return response;
   },
 
-  register: (userData) => 
+  register: (userData) =>
     fetchAPI('/auth/register', {
       method: 'POST',
       body: JSON.stringify(userData),
@@ -101,25 +101,25 @@ export const authAPI = {
     return Promise.resolve({ success: true, message: 'Logged out successfully' });
   },
 
-  verify: (email, otp) => 
+  verify: (email, otp) =>
     fetchAPI('/auth/verify', {
       method: 'POST',
       body: JSON.stringify({ email, otp }),
     }),
 
-  forgotPassword: (email) => 
+  forgotPassword: (email) =>
     fetchAPI('/auth/forgot-password', {
       method: 'POST',
       body: JSON.stringify({ email }),
     }),
 
-  verifyResetOTP: (email, otp) => 
+  verifyResetOTP: (email, otp) =>
     fetchAPI('/auth/verify-reset-otp', {
       method: 'POST',
       body: JSON.stringify({ email, otp }),
     }),
 
-  resetPassword: (email, otp, new_password) => 
+  resetPassword: (email, otp, new_password) =>
     fetchAPI('/auth/reset-password', {
       method: 'POST',
       body: JSON.stringify({ email, otp, new_password }),
@@ -153,17 +153,17 @@ export const categoriesAPI = {
 // Cart API
 export const cartAPI = {
   getCart: () => fetchAPI('/cart'),
-  addToCart: (productId, quantity = 1, variantId = null) => 
+  addToCart: (productId, quantity = 1, variantId = null) =>
     fetchAPI('/cart', {
       method: 'POST',
       body: JSON.stringify({ productId, quantity, variantId }),
     }),
-  updateCartItem: (productId, quantity, variantId = null) => 
+  updateCartItem: (productId, quantity, variantId = null) =>
     fetchAPI(`/cart/${productId}`, {
       method: 'PUT',
       body: JSON.stringify({ quantity, variantId }),
     }),
-  removeFromCart: (productId, variantId = null) => 
+  removeFromCart: (productId, variantId = null) =>
     fetchAPI(`/cart/${productId}${variantId ? `?variantId=${variantId}` : ''}`, {
       method: 'DELETE',
     }),
@@ -172,25 +172,25 @@ export const cartAPI = {
 // Wishlist API
 export const wishlistAPI = {
   getWishlist: () => fetchAPI('/wishlist'),
-  addToWishlist: (productId) => 
+  addToWishlist: (productId) =>
     fetchAPI('/wishlist', {
       method: 'POST',
       body: JSON.stringify({ productId }),
     }),
-  removeFromWishlist: (productId) => 
+  removeFromWishlist: (productId) =>
     fetchAPI(`/wishlist/${productId}`, {
       method: 'DELETE',
     }),
-  removeAllFromWishlist: () => 
+  removeAllFromWishlist: () =>
     fetchAPI('/wishlist', {
       method: 'DELETE',
     }),
-  addToCartFromWishlist: (productId, removeFromWishlist = false) => 
+  addToCartFromWishlist: (productId, removeFromWishlist = false) =>
     fetchAPI('/wishlist/add-to-cart', {
       method: 'POST',
       body: JSON.stringify({ productId, removeFromWishlist }),
     }),
-  addAllToCart: (removeFromWishlist = false) => 
+  addAllToCart: (removeFromWishlist = false) =>
     fetchAPI('/wishlist/add-all-to-cart', {
       method: 'POST',
       body: JSON.stringify({ removeFromWishlist }),
@@ -204,7 +204,7 @@ export const ordersAPI = {
     return fetchAPI(`/orders/my-orders${queryString ? `?${queryString}` : ''}`);
   },
   getById: (id) => fetchAPI(`/orders/${id}`),
-  checkout: (orderData) => 
+  checkout: (orderData) =>
     fetchAPI('/orders/checkout', {
       method: 'POST',
       body: JSON.stringify(orderData),
@@ -215,21 +215,21 @@ export const ordersAPI = {
 export const addressAPI = {
   getAll: () => fetchAPI('/addresses'),
   getById: (id) => fetchAPI(`/addresses/${id}`),
-  create: (addressData) => 
+  create: (addressData) =>
     fetchAPI('/addresses', {
       method: 'POST',
       body: JSON.stringify(addressData),
     }),
-  update: (id, addressData) => 
+  update: (id, addressData) =>
     fetchAPI(`/addresses/${id}`, {
       method: 'PUT',
       body: JSON.stringify(addressData),
     }),
-  setDefault: (id) => 
+  setDefault: (id) =>
     fetchAPI(`/addresses/${id}/set-default`, {
       method: 'PATCH',
     }),
-  delete: (id) => 
+  delete: (id) =>
     fetchAPI(`/addresses/${id}`, {
       method: 'DELETE',
     }),
@@ -238,7 +238,7 @@ export const addressAPI = {
 // User API
 export const userAPI = {
   getProfile: () => fetchAPI('/users/me'),
-  updateProfile: (userData) => 
+  updateProfile: (userData) =>
     fetchAPI('/users/me', {
       method: 'PUT',
       body: JSON.stringify(userData),
