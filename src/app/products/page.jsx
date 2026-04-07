@@ -1,7 +1,7 @@
 'use client'
 import SideBar from '@/component/Sidebar'
 import { Button, Drawer, IconButton } from '@mui/material'
-import React, { useState, useEffect, useMemo } from 'react'
+import React, { Suspense, useState, useEffect, useMemo } from 'react'
 import Menu from '@mui/material/Menu';
 import MenuItem from '@mui/material/MenuItem';
 import ProductItem from '@/component/ProductItem';
@@ -15,7 +15,7 @@ import { FiX } from 'react-icons/fi';
 import Container from '@/component/ui/Container'
 import Skeleton from '@/component/ui/Skeleton'
 
-const ProductPage = () => {
+const ProductPageContent = () => {
   const searchParams = useSearchParams();
   const router = useRouter();
   const searchQuery = searchParams.get('search') || '';
@@ -504,6 +504,14 @@ const ProductPage = () => {
         </div>
       </Container>
     </section>
+  )
+}
+
+const ProductPage = () => {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-[#F8F9FA]" />}>
+      <ProductPageContent />
+    </Suspense>
   )
 }
 
