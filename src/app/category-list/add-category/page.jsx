@@ -76,7 +76,7 @@ const AddCategoryPage = () => {
       setError(null);
       const token = localStorage.getItem("adminToken");
 
-      const response = await fetch("http://localhost:5000/api/categories", {
+      const response = await fetch("/backend-api/api/categories", {
         method: "POST",
         headers: {
           Authorization: `Bearer ${token}`,

@@ -14,8 +14,22 @@ const nextConfig = {
         port: '5000',
         pathname: '/uploads/**',
       },
+      {
+        protocol: 'https',
+        hostname: 'api.zenlamart.my.id',
+        pathname: '/uploads/**',
+      },
     ],
     unoptimized: process.env.NODE_ENV === 'development',
+  },
+  async rewrites() {
+    const backendUrl = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000';
+    return [
+      {
+        source: '/backend-api/:path*',
+        destination: `${backendUrl}/:path*`,
+      },
+    ];
   },
 };
 

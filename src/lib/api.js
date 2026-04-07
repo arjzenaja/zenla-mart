@@ -3,7 +3,7 @@
  * Handles all API calls to the backend server
  */
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+const API_URL = '/backend-api/api';
 
 /**
  * Generic fetch wrapper with error handling
@@ -263,7 +263,7 @@ export const wishlistAPI = {
 // Upload API
 export const uploadAPI = {
   uploadImage: async (formData) => {
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
+    const API_URL = '/backend-api/api';
     const url = `${API_URL}/upload/image`;
     
     const defaultOptions = {
@@ -303,7 +303,7 @@ export const uploadAPI = {
 };
 
 // Admin Auth API
-const ADMIN_API_URL = process.env.NEXT_PUBLIC_API_URL?.replace('/api', '') || 'http://localhost:5000';
+const ADMIN_API_URL = '/backend-api';
 
 export const adminAuthAPI = {
   login: async (email, password) => {
@@ -357,7 +357,7 @@ export const adminAuthAPI = {
     } catch (error) {
       // Handle network errors
       if (error.name === 'TypeError' && error.message.includes('fetch')) {
-        throw new Error('Cannot connect to server. Make sure server is running on http://localhost:5000');
+        throw new Error('Cannot connect to server. Please check your connection.');
       }
       throw error;
     }

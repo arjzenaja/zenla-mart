@@ -36,7 +36,7 @@ const CategoryListPage = () => {
     const fetchCategories = async () => {
       try {
         setIsLoading(true);
-        const response = await fetch("http://localhost:5000/api/categories");
+        const response = await fetch("/backend-api/api/categories");
         
         if (!response.ok) {
           throw new Error("Failed to fetch categories");
@@ -81,7 +81,7 @@ const CategoryListPage = () => {
       const token = localStorage.getItem("adminToken");
       
       const response = await fetch(
-        `http://localhost:5000/api/categories/${deleteConfirm.id}`,
+        `/backend-api/api/categories/${deleteConfirm.id}`,
         {
           method: "DELETE",
           headers: {

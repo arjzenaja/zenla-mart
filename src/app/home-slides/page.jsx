@@ -51,8 +51,7 @@ const HomeSlides = () => {
   };
 
   const API_BASE =
-    process.env.NEXT_PUBLIC_API_URL?.replace("/api", "") ||
-    "http://localhost:5000";
+    process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
 
   const getSlideImageUrl = (image) => {
     if (!image) return null;

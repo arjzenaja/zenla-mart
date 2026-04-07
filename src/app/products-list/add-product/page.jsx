@@ -154,8 +154,7 @@ const AddProduct = () => {
       
       // Convert relative URL to absolute URL if needed
       if (imageUrl && imageUrl.startsWith('/uploads/')) {
-        const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api';
-        const baseURL = API_URL.replace('/api', '');
+        const baseURL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:5000';
         imageUrl = `${baseURL}${imageUrl}`;
       }
       

@@ -30,7 +30,7 @@ const EditCategoryPage = () => {
       try {
         setIsLoading(true);
         const response = await fetch(
-          `http://localhost:5000/api/categories/${categoryId}`
+          `/backend-api/api/categories/${categoryId}`
         );
 
         if (!response.ok) {
@@ -120,7 +120,7 @@ const EditCategoryPage = () => {
       const token = localStorage.getItem("adminToken");
 
       const response = await fetch(
-        `http://localhost:5000/api/categories/${categoryId}`,
+        `/backend-api/api/categories/${categoryId}`,
         {
           method: "PUT",
           headers: {

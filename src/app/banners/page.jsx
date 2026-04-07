@@ -40,8 +40,7 @@ const HomeSlides = () => {
   const [rowsPerPage, setRowsPerPage] = useState(10);
 
   const API_BASE =
-    process.env.NEXT_PUBLIC_API_URL?.replace("/api", "") ||
-    "http://localhost:5000";
+    process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:5000";
 
   const getBannerImageUrl = (image) => {
     if (!image) return null;
