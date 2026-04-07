@@ -26,6 +26,9 @@
     "nodemailer": "^8.0.1",
     "uuid": "^9.0.1"
   },
+  "prisma": {
+    "seed": "node prisma/seed.js"
+  },
   "devDependencies": {
     "fs": "^0.0.1-security",
     "nodemon": "^3.0.1",
