@@ -1,28 +1,40 @@
 const prisma = require('../utils/prisma');
 
+// Ensure slide image URLs are absolute
+const normalizeImageUrl = (slide) => {
+  if (!slide || !slide.image) return slide;
+  // If image is already a full URL, leave it as-is
+  if (slide.image.startsWith('http://') || slide.image.startsWith('https://')) return slide;
+  // Prepend the server base URL to relative paths
+  const baseUrl = process.env.APP_URL || 'http://localhost:5000';
+  return { ...slide, image: `${baseUrl}${slide.image}` };
+};
+
 const getAllSlides = async () => {
-  return await prisma.slide.findMany({
+  const slides = await prisma.slide.findMany({
     where: { isActive: true },
     orderBy: { order: 'asc' }
   });
+  return slides.map(normalizeImageUrl);
 };
 
 const getAllSlidesAdmin = async () => {
-  return await prisma.slide.findMany({
+  const slides = await prisma.slide.findMany({
     orderBy: { order: 'asc' }
   });
+  return slides.map(normalizeImageUrl);
 };
 
 const getSlideById = async (id) => {
   const slide = await prisma.slide.findUnique({
     where: { id }
   });
-  
+
   if (!slide) {
     throw new Error('Slide not found');
   }
-  
-  return slide;
+
+  return normalizeImageUrl(slide);
 };
 
 const createSlide = async (slideData) => {

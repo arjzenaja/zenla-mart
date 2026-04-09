@@ -9,8 +9,10 @@ const uploadImage = async (req, res, next) => {
       });
     }
 
-    const fileUrl = `/uploads/${req.file.filename}`;
-    
+    // Build full URL so the image is accessible from any domain (e.g. frontend in production)
+    const baseUrl = process.env.APP_URL || `${req.protocol}://${req.get('host')}`;
+    const fileUrl = `${baseUrl}/uploads/${req.file.filename}`;
+
     res.json({
       success: true,
       message: 'File uploaded successfully',
