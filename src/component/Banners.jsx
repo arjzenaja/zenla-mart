@@ -50,8 +50,12 @@ const Banners = () => {
 
   const getBannerImageUrl = (image) => {
     if (!image) return null;
-    // Jika sudah full URL, langsung pakai
+    // If it's already a full URL, extract just the path starting from /uploads/
     if (image.startsWith('http://') || image.startsWith('https://')) {
+      const uploadsIndex = image.indexOf('/uploads/');
+      if (uploadsIndex !== -1) {
+        return `${API_BASE}${image.substring(uploadsIndex)}`;
+      }
       return image;
     }
     // Jika path dari server (misal: /uploads/xxx.png)
